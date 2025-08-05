@@ -133,7 +133,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\supp.cpp" />
     <ClCompile Include="route.cpp" />
     <ClCompile Include="ObstacleHandler.cpp" />
     <ClCompile Include="Source.cpp" />
@@ -144,7 +143,6 @@
     <ClCompile Include="UIforVI.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\Supp.h" />
     <ClInclude Include="Graph.h" />
     <ClInclude Include="Navigator.h" />
     <ClInclude Include="nlohmann\json.hpp" />
