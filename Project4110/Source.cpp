@@ -3,6 +3,7 @@
 #include "TripManager.h"
 #include "Text2Speech.h"
 #include "UIforVI.h"
+#include "GridRouteReader"
 
 #include <iostream>
 #include	<opencv2/core/core.hpp> // The core functions of opencv
@@ -12,6 +13,8 @@ using namespace std;
 using namespace cv;
 
 int main() {
+    GridRouteReader reader;
+    reader gridLoader("NavigationFile\RouteGrid.txt");
     VideoCapture cap(0);
     if (!cap.isOpened()) {
         cerr << "Camera not accessible.\n";
@@ -58,3 +61,4 @@ int main() {
     cv::destroyAllWindows();
     return 0;
 }
+
