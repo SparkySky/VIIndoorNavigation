@@ -1,3 +1,11 @@
+#include <iostream>
+#include <opencv2/core/core.hpp> // Core functions
+#include <opencv2/highgui/highgui.hpp> // GUI functions
+
+// Partitioning
+#include	"Supp.h"
+
+// Created Modules
 #include "QRDetector.h"
 #include "Navigator.h"
 #include "TripManager.h"
@@ -5,12 +13,13 @@
 #include "UIforVI.h"
 #include "GridRouteReader"
 
-#include <iostream>
-#include	<opencv2/core/core.hpp> // The core functions of opencv
-#include	<opencv2/highgui/highgui.hpp> // The GUI functions of opencv
-
 using namespace std;
 using namespace cv;
+
+// Partition Config
+int const imgPerCol = 1, imgPerRow = 3;
+Mat largeWin, win[imgPerCol * imgPerRow],
+    legend[imgPerCol * imgPerRow];
 
 int main() {
     GridRouteReader reader;
@@ -21,18 +30,24 @@ int main() {
         return -1;
     }
 
+    // Create module object
     QRDetector qrDetector;
     TripManager tripManager;
     Navigator navigator;
     Text2Speech tts;
     UIforVI uiManager;
 
+    tts.speak("System initialized.");
+
     while (true) {
         cv::Mat frame;
         cap >> frame;
         if (frame.empty()) continue;
 
-        tts.speak("System initialized.");
+        createWindowPartition(frame, largeWin, win, legend, imgPerCol, imgPerRow);
+        frame.copyTo(win[0]);
+
+        
 
         std::string locationID = qrDetector.detect(frame);
         //cv::QRCodeDetector qrDecoder;
@@ -44,16 +59,19 @@ int main() {
             tripManager.updateLocation(locationID);
             tts.speak("You are at " + locationID);
 
-            if (!tripManager.hasPath()) {
-                std::string destination = uiManager.selectDestination();
+            std::string destNode = tripManager.getNextNode();
+
+            if (!tripManager.hasPath() || destNode=="") {
+                std::string destination = uiManager.selectDestination(locationID);
                 auto path = navigator.findPath(locationID, destination);
                 tripManager.setPath(path);
             }
 
-            std::string nextNode = tripManager.getNextNode();
-            tts.speak("Walk towards " + nextNode);
+
+            tts.speak("Walk towards " + destNode);
         }
 
+        imshow("Before and after", largeWin);
         if (cv::waitKey(1) == 'q') break;
     }
 
