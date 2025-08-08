@@ -1,16 +1,18 @@
 #pragma once
 #include <vector>
 #include <string>
+#include "Text2Speech.h"
+
+using namespace std;
 
 class TripManager {
 public:
-    void updateLocation(const std::string& location);
-    void setPath(const std::vector<std::string>& path);
-    std::string getNextNode();
+    void updateLocation(const string& location);
+    void setPath(const vector<string>& path);
     bool hasPath() const;
-
+    string getNextNode();
 private:
-    std::string currentLocation;
-    std::vector<std::string> path;
+    string currentLocation;
+    vector<string> path;
     size_t pathIndex = 0;
 };

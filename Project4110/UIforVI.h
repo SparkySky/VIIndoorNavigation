@@ -2,15 +2,17 @@
 #include <vector>
 #include <string>
 
-class UIforVI {
+using namespace std;
+
+class UIForVI {
 public:
-    UIforVI();    
+    UIForVI(); 
     
-    std::vector<std::string> destinations;  // Array storing available destination
-    int curIndex;   // Used for Scroll or selection
-    std::string selectDestination();
+    vector<std::string> destinations;   // Array storing available destination
+    int curIndex;                       // Used for Scroll or selection
 
     void narrateCurrentOption();
     char getUserInput();
-    std::string selectDestination(std::string curLocation);
+    string selectDestination(string curLocation);
+    string selectDestination();
 };

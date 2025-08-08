@@ -145,6 +145,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Graph.h" />
+    <ClInclude Include="GridRouteReader.h" />
     <ClInclude Include="Navigator.h" />
     <ClInclude Include="nlohmann\json.hpp" />
     <ClInclude Include="ObstacleHandler.h" />
@@ -152,7 +153,7 @@
     <ClInclude Include="Supp.h" />
     <ClInclude Include="Text2Speech.h" />
     <ClInclude Include="TripManager.h" />
-    <ClInclude Include="UIforVI.h" />
+    <ClInclude Include="UIForVI.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

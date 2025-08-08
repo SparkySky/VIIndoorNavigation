@@ -1,19 +1,29 @@
 #include "TripManager.h"
+#include "Text2Speech.h"
 
-void TripManager::updateLocation(const std::string& location) {
+using namespace std;
+
+// For path update
+// Use cases:
+// 1. Update path,
+// 2. Pinpoint starting location for navigation.
+void TripManager::updateLocation(const string& location) {
     currentLocation = location;
     if (pathIndex < path.size() && path[pathIndex] == location) {
         pathIndex++;
     }
 }
 
-void TripManager::setPath(const std::vector<std::string>& newPath) {
+// Set new path (After setting destination)
+void TripManager::setPath(const vector<string>& newPath) {
     path = newPath;
     pathIndex = 0;
 }
 
-std::string TripManager::getNextNode() {
-    if (pathIndex < path.size()) return path[pathIndex];
+// 
+string TripManager::getNextNode() {
+    if (pathIndex < path.size()) 
+        return path[pathIndex];
     return "";
 }
 

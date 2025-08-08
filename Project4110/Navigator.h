@@ -3,10 +3,12 @@
 #include <string>
 #include <unordered_map>
 
+using namespace std;
+
 class Navigator {
 public:
-    std::vector<std::string> findPath(const std::string& start, const std::string& end);
-    void loadMap(const std::string& filename);
+    vector<string> findPath(const string& start, const string& end);
+    void loadMap(const string& filename);
 private:
-    std::unordered_map<std::string, std::vector<std::pair<std::string, int>>> graph;
+    unordered_map<string, vector<pair<string, int>>> graph;
 };

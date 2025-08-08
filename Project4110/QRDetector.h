@@ -2,9 +2,14 @@
 #include <opencv2/opencv.hpp>
 #include <string>
 
+using namespace std;
+using namespace cv;
+
 class QRDetector {
 public:
-    std::string detect(const cv::Mat& frame);
+    string detect(const Mat& frame);
+    Mat cropped;
+    Mat upscaled;
 private:
-    cv::Mat extractRedRegion(const cv::Mat& frame);
+    Mat extractRedRegion(const Mat& frame);
 };
