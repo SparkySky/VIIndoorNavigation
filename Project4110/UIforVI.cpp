@@ -25,18 +25,19 @@ char UIforVI::getUserInput() {
 
 std::string UIforVI::selectDestination(std::string curLocation) {
     narrator.speak("Select Destination");
-    if (destinations[curIndex] == curLocation) curIndex++;  // Skip to next if selection == location.
+    if (destinations[curIndex] == curLocation) 
+        curIndex = (curIndex++ + destinations.size()) % destinations.size();  // Skip to next if selection == location.
     narrateCurrentOption();
 
     while (true) {
         char input = getUserInput();
         if (input == 'u') {
-            curIndex = (curIndex - 1 + destinations.size()) % destinations.size();
-            if (destinations[curIndex] == curLocation) curIndex++;
+            curIndex = (--curIndex + destinations.size()) % destinations.size();
+            if (destinations[curIndex] == curLocation) curIndex--;
         }
         else if (input == 'd') {
-            curIndex = (curIndex + 1) % destinations.size();
-            if (destinations[curIndex] == curLocation) curIndex--;
+            curIndex = (++curIndex) % destinations.size();
+            if (destinations[curIndex] == curLocation) curIndex++;
         }
         else if (input == 'c') {
             Text2Speech narrator;

@@ -3,6 +3,7 @@
 #include <queue>
 #include <fstream>
 #include "nlohmann/json.hpp"
+#include <iostream>
 
 using namespace std;
 
@@ -13,7 +14,7 @@ vector<string> GridRouteReader::gridLoader(const string& filename) {
     ifstream file(filename);
 
     if (!file.is_open()) {
-        cout << "Error opening file: " << filename << endl;
+        cerr << "Error opening file: " << filename << endl;
         return {};
     }
 
