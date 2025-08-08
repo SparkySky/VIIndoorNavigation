@@ -1,26 +1,51 @@
 #include "Navigator.h"
+#include "GridRouteReader.h"
 #include <queue>
 #include <fstream>
 #include "nlohmann/json.hpp"
 
+using namespace std;
+
 using json = nlohmann::json;
 
-void Navigator::loadMap(const std::string& filename) {
-    std::ifstream file(filename);
+vector<string> GridRouteReader::gridLoader(const string& filename) {
+    grid.clear();
+    ifstream file(filename);
+
+    if (!file.is_open()) {
+        cout << "Error opening file: " << filename << endl;
+        return {};
+    }
+
+    string line;
+    while (getline(file, line)) {
+        grid.push_back(line);
+    }
+
+    file.close();
+    return grid;
+}
+
+
+
+
+//djikstra
+void Navigator::loadMap(const string& filename) {
+    ifstream file(filename);
     json j;
     file >> j;
     for (auto& node : j.items()) {
-        std::string id = node.key();
+        string id = node.key();
         for (auto& neighbor : node.value()) {
             graph[id].emplace_back(neighbor["id"], neighbor["cost"]);
         }
     }
 }
 
-std::vector<std::string> Navigator::findPath(const std::string& start, const std::string& end) {
-    std::unordered_map<std::string, int> dist;
-    std::unordered_map<std::string, std::string> prev;
-    std::priority_queue<std::pair<int, std::string>> pq;
+vector<string> Navigator::findPath(const string& start, const string& end) {
+    unordered_map<string, int> dist;
+    unordered_map<string, string> prev;
+    priority_queue<pair<int, string>> pq;
 
     dist[start] = 0;
     pq.push({ 0, start });
@@ -42,11 +67,11 @@ std::vector<std::string> Navigator::findPath(const std::string& start, const std
         }
     }
 
-    std::vector<std::string> path;
-    for (std::string at = end; at != ""; at = prev[at]) {
+    vector<string> path;
+    for (string at = end; at != ""; at = prev[at]) {
         path.push_back(at);
         if (at == start) break;
     }
-    std::reverse(path.begin(), path.end());
+    reverse(path.begin(), path.end());
     return path;
 }

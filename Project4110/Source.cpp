@@ -11,6 +11,7 @@
 #include "TripManager.h"
 #include "Text2Speech.h"
 #include "UIforVI.h"
+#include "GridRouteReader"
 
 using namespace std;
 using namespace cv;
@@ -21,6 +22,8 @@ Mat largeWin, win[imgPerCol * imgPerRow],
     legend[imgPerCol * imgPerRow];
 
 int main() {
+    GridRouteReader reader;
+    reader gridLoader("NavigationFile\RouteGrid.txt");
     VideoCapture cap(0);
     if (!cap.isOpened()) {
         cerr << "Camera not accessible.\n";
@@ -76,3 +79,4 @@ int main() {
     cv::destroyAllWindows();
     return 0;
 }
+
