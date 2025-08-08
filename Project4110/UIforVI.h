@@ -4,13 +4,13 @@
 
 class UIforVI {
 public:
-    UIforVI();
+    UIforVI();    
+    
+    std::vector<std::string> destinations;  // Array storing available destination
+    int curIndex;   // Used for Scroll or selection
     std::string selectDestination();
-
-private:
-    std::vector<std::string> destinations;
-    int currentIndex;
 
     void narrateCurrentOption();
     char getUserInput();
+    std::string selectDestination(std::string curLocation);
 };

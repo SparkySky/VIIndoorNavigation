@@ -138,6 +138,7 @@
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="QRDetector.cpp" />
     <ClCompile Include="Navigator.cpp" />
+    <ClCompile Include="supp.cpp" />
     <ClCompile Include="Text2Speech.cpp" />
     <ClCompile Include="TripManager.cpp" />
     <ClCompile Include="UIforVI.cpp" />
@@ -148,6 +149,7 @@
     <ClInclude Include="nlohmann\json.hpp" />
     <ClInclude Include="ObstacleHandler.h" />
     <ClInclude Include="QRDetector.h" />
+    <ClInclude Include="Supp.h" />
     <ClInclude Include="Text2Speech.h" />
     <ClInclude Include="TripManager.h" />
     <ClInclude Include="UIforVI.h" />

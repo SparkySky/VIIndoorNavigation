@@ -51,6 +51,9 @@
     <ClCompile Include="route.cpp">
       <Filter>Source Files\handling\utils</Filter>
     </ClCompile>
+    <ClCompile Include="supp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="QRDetector.h">
@@ -75,6 +78,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="nlohmann\json.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Supp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

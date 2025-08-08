@@ -34,13 +34,16 @@
 //    return "";
 //}
 
+//#include "Source.cpp"
 #include "QRDetector.h"
+#include "supp.h"
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/objdetect.hpp>
 
 using namespace cv;
+extern Mat win[];
 
 cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
     cv::Mat hsv, mask1, mask2, mask;
@@ -55,15 +58,18 @@ cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
 
 
     mask = mask1 | mask2;
-
-    cv::imshow("Red Mask", mask);
-
+    
     return mask;
 }
 
 std::string QRDetector::detect(const cv::Mat& frame) {
     cv::Mat mask = extractRedRegion(frame);
     std::vector<std::vector<cv::Point>> contours;
+
+    Mat RGBmask;
+    cv::cvtColor(mask, RGBmask, cv::COLOR_GRAY2BGR);
+    RGBmask.copyTo(win[1]);
+
     cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
     for (const auto& contour : contours) {
@@ -77,17 +83,21 @@ std::string QRDetector::detect(const cv::Mat& frame) {
             if (!cropped.empty()) {
                 cv::Mat upscaled;
                 cv::resize(cropped, upscaled, cv::Size(), 2.0, 2.0, cv::INTER_LINEAR);
-
-                cv::rectangle(frame, safeBox, cv::Scalar(0, 255, 0), 2);
-                //cv::imshow("Detected Region", frame);
-
+                imshow("QR Cropped", cropped);
+                imshow("QR Upscaled", upscaled);
                 cv::QRCodeDetector qrDecoder;
-                std::string data = qrDecoder.detectAndDecode(upscaled);
-                if (!data.empty()) return data;
+                
+                if (!upscaled.empty() && upscaled.cols > 0 && upscaled.rows > 0) {
+                    std::string data = qrDecoder.detectAndDecode(upscaled);
+                    if (!data.empty())
+                        cout << "found\n";
+                        return data;
+                }
+
             }
         }
-
     }
 
+    //imshow("Color Processing and QR Detection", largeWin);
     return "";
 }
