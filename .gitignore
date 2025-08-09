@@ -1,6 +1,7 @@
 # Folder to ignore
 .vs/
 x64/
+Project4110/x64
 
 # Prerequisites
 *.d
