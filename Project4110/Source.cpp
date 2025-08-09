@@ -48,6 +48,10 @@ int main() {
 
         // Create partition
         createWindowPartition(frame, largeWin, win, legend, imgPerCol, imgPerRow);
+        putText(legend[0], "Original RGB", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
+        putText(legend[1], "HSV Filter", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
+        putText(legend[2], "Mask BGR", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
+        putText(legend[3], "Segmentation", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
         frame.copyTo(win[0]);
 
         // Retrieving LocationID from QR Code using component developed by
