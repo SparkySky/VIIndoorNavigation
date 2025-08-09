@@ -15,27 +15,26 @@ UIForVI::UIForVI() {
 }
 
 string UIForVI::selectDestination(string curLocation) {
-    curIndex = 0; // Reset to cancel
-
+    curIndex = 0; // Reset to 'Cancel'
     narrate.speak("Select Destination");
 
     // Function below is needed if first destinations is a real place. Else no need
     //if (destinations[curIndex] == curLocation) // Pre check if simillar location and dest
     //    curIndex = (++curIndex + destinations.size()) % destinations.size();  // Skip to next if selection == location.
 
-    narrateCurrentOption();
+    narrateCurrentOption(); // Narrate current position
 
-    while (true) {
+    while (true) { // User input: W - Previous, S - Next, C- Comfirm
         char input = getUserInput();
-        if (input == 'u') { // Scroll up
+        if (input == 'w') { // Scroll up
             curIndex = (--curIndex + destinations.size()) % destinations.size();
             if (destinations[curIndex] == curLocation) 
-                curIndex = (--curIndex + destinations.size()) % destinations.size();; // Post check
+                curIndex = (--curIndex + destinations.size()) % destinations.size(); // Post check
         }
-        else if (input == 'd') { /// Scroll down
+        else if (input == 's') { /// Scroll down
             curIndex = (++curIndex) % destinations.size();
             if (destinations[curIndex] == curLocation) 
-                curIndex = (++curIndex + destinations.size()) % destinations.size();; // Post check
+                curIndex = (++curIndex + destinations.size()) % destinations.size(); // Post check
         }
         else if (input == 'c') {
             if (curIndex == 0) {
@@ -57,7 +56,7 @@ void UIForVI::narrateCurrentOption() {
 
 // Get user input
 char UIForVI::getUserInput() {
-    cout << "[u] Scroll Up | [d] Scroll Down | [c] Confirm\n> ";
+    cout << "[w] Scroll Up | [s] Scroll Down | [c] Confirm\n> ";
     char input;
     cin >> input;
     return input;

@@ -22,7 +22,7 @@ Mat largeWin, win[imgPerCol * imgPerRow],
     legend[imgPerCol * imgPerRow];
 
 int main() {
-    VideoCapture cap(0);
+    VideoCapture cap(0);    // 0 (Default camera), >= 1 (other input)
     if (!cap.isOpened()) {
         cerr << "Camera not accessible.\n";
         return -1;
@@ -50,25 +50,23 @@ int main() {
         createWindowPartition(frame, largeWin, win, legend, imgPerCol, imgPerRow);
         frame.copyTo(win[0]);
 
-        
+        // Retrieving LocationID from QR Code using component developed by
+        // Khor Jia En (Color Processing) and Yee Wen Xian (QR Detection)
+        string locationID = qrDetector.detect(frame); 
 
-        string locationID = qrDetector.detect(frame);
-
-        /* Default QR Scanner */
-        //QRCodeDetector qrDecoder;
-        //string locationID = qrDecoder.detectAndDecode(frame);
-
-        // cout << "QR data: " << locationID << endl; // For Debug QR
+        /* Default OpenCV QR Scanner */
+        // QRCodeDetector qrDecoder;
+        // string locationID = qrDecoder.detectAndDecode(frame);
 
         if (!locationID.empty()) {
-            tripManager.updateLocation(locationID);
+            tripManager.updateLocation(locationID); // Constantly localizing user
             narrate.speak("You're at " + locationID);
 
-            destNode = tripManager.getNextNode();
+            destNode = tripManager.getNextNode(); // Get next node in generated path
 
-            // If path not exist, the next QR scanned will be used to initialize
-            // the navigation starting point.
-            // BACKUP: if (!tripManager.hasPath() || destNode == "") {
+            // If path/node not exist before, the QR scanned will be used to 
+            // initialize the navigation starting point.
+            // BACKUP Code: if (!tripManager.hasPath() || destNode == "") {
             if (destNode == "") {
                 cout << "Loc data: " << locationID << endl; // For Debug Nodes 
                 string destination = uiManager.selectDestination(locationID);
@@ -82,8 +80,6 @@ int main() {
             }
 
         }
-        imshow("Before and after", largeWin);
-
         if (waitKey(1) == 'x') {
             locationID = "";
             destNode = "";
@@ -91,6 +87,7 @@ int main() {
             narrate.speak("Navigation cancelled");
         }
 
+        imshow("Before and after", largeWin);
         if (waitKey(1) == 'q') break;
     }
 

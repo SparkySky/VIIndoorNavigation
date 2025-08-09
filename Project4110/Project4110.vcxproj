@@ -134,21 +134,19 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="route.cpp" />
-    <ClCompile Include="ObstacleHandler.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="QRDetector.cpp" />
     <ClCompile Include="Navigator.cpp" />
     <ClCompile Include="supp.cpp" />
     <ClCompile Include="Text2Speech.cpp" />
     <ClCompile Include="TripManager.cpp" />
-    <ClCompile Include="UIforVI.cpp" />
+    <ClCompile Include="UIForVI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Graph.h" />
     <ClInclude Include="GridRouteReader.h" />
     <ClInclude Include="Navigator.h" />
     <ClInclude Include="nlohmann\json.hpp" />
-    <ClInclude Include="ObstacleHandler.h" />
     <ClInclude Include="QRDetector.h" />
     <ClInclude Include="Supp.h" />
     <ClInclude Include="Text2Speech.h" />

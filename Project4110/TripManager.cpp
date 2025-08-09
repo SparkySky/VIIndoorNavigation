@@ -20,13 +20,13 @@ void TripManager::setPath(const vector<string>& newPath) {
     pathIndex = 0;
 }
 
-// 
+// Get next node in a predefined path
 string TripManager::getNextNode() {
     if (pathIndex < path.size()) 
         return path[pathIndex];
     return "";
 }
 
-bool TripManager::hasPath() const {
-    return !path.empty();
-}
+//bool TripManager::hasPath() const {
+//    return !path.empty();
+//}
