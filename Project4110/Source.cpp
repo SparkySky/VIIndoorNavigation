@@ -10,21 +10,19 @@
 #include "Navigator.h"
 #include "TripManager.h"
 #include "Text2Speech.h"
-#include "UIforVI.h"
-#include "GridRouteReader"
+#include "UIForVI.h"
+#include "GridRouteReader.h"
 
 using namespace std;
 using namespace cv;
 
 // Partition Config
-int const imgPerCol = 1, imgPerRow = 3;
+int const imgPerCol = 1, imgPerRow = 2;
 Mat largeWin, win[imgPerCol * imgPerRow],
     legend[imgPerCol * imgPerRow];
 
 int main() {
-    GridRouteReader reader;
-    reader gridLoader("NavigationFile\RouteGrid.txt");
-    VideoCapture cap(0);
+    VideoCapture cap(0);    // 0 (Default camera), >= 1 (other input)
     if (!cap.isOpened()) {
         cerr << "Camera not accessible.\n";
         return -1;
@@ -34,49 +32,66 @@ int main() {
     QRDetector qrDetector;
     TripManager tripManager;
     Navigator navigator;
-    Text2Speech tts;
-    UIforVI uiManager;
+    Text2Speech narrate;
+    UIForVI uiManager;
+    GridRouteReader reader;
 
-    tts.speak("System initialized.");
+    string destNode;
+
+    reader.gridLoader("NavigationFile\\RouteGrid.txt");
+    narrate.speak("System initialized.");
 
     while (true) {
-        cv::Mat frame;
+        Mat frame;
         cap >> frame;
         if (frame.empty()) continue;
 
+        // Create partition
         createWindowPartition(frame, largeWin, win, legend, imgPerCol, imgPerRow);
         frame.copyTo(win[0]);
 
-        
+        // Retrieving LocationID from QR Code using component developed by
+        // Khor Jia En (Color Processing) and Yee Wen Xian (QR Detection)
+        string locationID = qrDetector.detect(frame); 
 
-        std::string locationID = qrDetector.detect(frame);
-        //cv::QRCodeDetector qrDecoder;
-        //std::string locationID = qrDecoder.detectAndDecode(frame);
-        std::cout << "QR data: " << locationID << std::endl;
+        /* Default OpenCV QR Scanner */
+        // QRCodeDetector qrDecoder;
+        // string locationID = qrDecoder.detectAndDecode(frame);
 
         if (!locationID.empty()) {
-            cout << "Run 2\n";
-            tripManager.updateLocation(locationID);
-            tts.speak("You are at " + locationID);
+            tripManager.updateLocation(locationID); // Constantly localizing user
+            narrate.speak("You're at " + locationID);
 
-            std::string destNode = tripManager.getNextNode();
+            destNode = tripManager.getNextNode(); // Get next node in generated path
 
-            if (!tripManager.hasPath() || destNode=="") {
-                std::string destination = uiManager.selectDestination(locationID);
-                auto path = navigator.findPath(locationID, destination);
-                tripManager.setPath(path);
+            // If path/node not exist before, the QR scanned will be used to 
+            // initialize the navigation starting point.
+            // BACKUP Code: if (!tripManager.hasPath() || destNode == "") {
+            if (destNode == "") {
+                cout << "Loc data: " << locationID << endl; // For Debug Nodes 
+                string destination = uiManager.selectDestination(locationID);
+                if (destination != "") {
+                    // Set up navigation route
+                    auto path = navigator.findPath(locationID, destination); 
+                    tripManager.setPath(path); 
+
+                    narrate.speak("Walk towards " + destination);
+                }
             }
 
-
-            tts.speak("Walk towards " + destNode);
+        }
+        if (waitKey(1) == 'x') {
+            locationID = "";
+            destNode = "";
+            tripManager.setPath(vector<string> {});
+            narrate.speak("Navigation cancelled");
         }
 
         imshow("Before and after", largeWin);
-        if (cv::waitKey(1) == 'q') break;
+        if (waitKey(1) == 'q') break;
     }
 
     cap.release();
-    cv::destroyAllWindows();
+    destroyAllWindows();
     return 0;
 }
-

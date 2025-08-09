@@ -1,4 +1,4 @@
-﻿  UIforVI.cpp
-C:\Users\alvin\Desktop\OpenCV\GitProject4110\VIIndoorNavigation\Project4110\UIforVI.cpp(29,55): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\alvin\Desktop\OpenCV\GitProject4110\VIIndoorNavigation\Project4110\UIforVI.cpp(35,59): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+﻿  Source.cpp
+  TripManager.cpp
+  Generating Code...
   Project4110.vcxproj -> C:\Users\alvin\Desktop\OpenCV\GitProject4110\VIIndoorNavigation\x64\Debug\Project4110.exe

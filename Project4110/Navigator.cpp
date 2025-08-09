@@ -1,9 +1,10 @@
-#include "Navigator.h"
-#include "GridRouteReader.h"
 #include <queue>
 #include <fstream>
-#include "nlohmann/json.hpp"
 #include <iostream>
+
+#include "Navigator.h"
+#include "GridRouteReader.h"
+#include "nlohmann/json.hpp"
 
 using namespace std;
 
@@ -26,8 +27,6 @@ vector<string> GridRouteReader::gridLoader(const string& filename) {
     file.close();
     return grid;
 }
-
-
 
 
 //djikstra

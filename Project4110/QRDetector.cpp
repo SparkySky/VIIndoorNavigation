@@ -4,96 +4,98 @@
 //
 //using namespace cv;
 //
-//cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
-//    //cv::Mat hsv, mask1, mask2, mask;
-//    //cv::cvtColor(frame, hsv, cv::COLOR_BGR2HSV);
-//    //cv::inRange(hsv, cv::Scalar(0, 100, 100), cv::Scalar(10, 255, 255), mask1);
-//    //cv::inRange(hsv, cv::Scalar(160, 100, 100), cv::Scalar(180, 255, 255), mask2);
+//Mat QRDetector::extractRedRegion(const Mat& frame) {
+//    //Mat hsv, mask1, mask2, mask;
+//    //cvtColor(frame, hsv, COLOR_BGR2HSV);
+//    //inRange(hsv, Scalar(0, 100, 100), Scalar(10, 255, 255), mask1);
+//    //inRange(hsv, Scalar(160, 100, 100), Scalar(180, 255, 255), mask2);
 //    //mask = mask1 | mask2;
 //    //imshow(mask);
 //    return frame;
 //}
 //
-//std::string QRDetector::detect(const cv::Mat& frame) {
-//    cv::Mat mask = extractRedRegion(frame);
-//    std::vector<std::vector<cv::Point>> contours;
-//    cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+//string QRDetector::detect(const Mat& frame) {
+//    Mat mask = extractRedRegion(frame);
+//    vector<vector<Point>> contours;
+//    findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 //
 //    for (const auto& contour : contours) {
-//        cv::Rect bbox = cv::boundingRect(contour);
+//        Rect bbox = boundingRect(contour);
 //
 //        // Ensure bbox is within frame bounds
-//        bbox &= cv::Rect(0, 0, frame.cols, frame.rows);
+//        bbox &= Rect(0, 0, frame.cols, frame.rows);
 //        if (bbox.width <= 0 || bbox.height <= 0) continue;
 //
-//        cv::Mat cropped = frame(bbox);
-//        cv::QRCodeDetector qrDecoder;
-//        std::string data = qrDecoder.detectAndDecode(cropped);
+//        Mat cropped = frame(bbox);
+//        QRCodeDetector qrDecoder;
+//        string data = qrDecoder.detectAndDecode(cropped);
 //        if (!data.empty()) return data;
 //    }
 //    return "";
 //}
 
-//#include "Source.cpp"
-#include "QRDetector.h"
-#include "supp.h"
+
+
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/objdetect.hpp>
 
+#include "QRDetector.h"
+#include "supp.h"
+
 using namespace cv;
+using namespace std;
+
 extern Mat win[];
 
-cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
-    cv::Mat hsv, mask1, mask2, mask;
-    cv::cvtColor(frame, hsv, cv::COLOR_BGR2HSV);
+Mat QRDetector::extractRedRegion(const Mat& frame) {
+    Mat hsv, mask1, mask2, mask;
+    cvtColor(frame, hsv, COLOR_BGR2HSV);
 
     // Red has two ranges in HSV
-    //cv::inRange(hsv, cv::Scalar(8, 70, 50), cv::Scalar(13, 255, 255), mask1);   // Lower red range
-    //cv::inRange(hsv, cv::Scalar(167, 70, 50), cv::Scalar(175, 255, 255), mask2); // Upper red range
-    cv::inRange(hsv, cv::Scalar(8, 150, 100), cv::Scalar(13, 255, 255), mask1);   // Lower red range
-    cv::inRange(hsv, cv::Scalar(167, 150, 100), cv::Scalar(180, 255, 255), mask2); // Upper red range
-
-
+    //inRange(hsv, Scalar(8, 70, 50), Scalar(13, 255, 255), mask1);   // Lower red range
+    //inRange(hsv, Scalar(167, 70, 50), Scalar(175, 255, 255), mask2); // Upper red range
+    inRange(hsv, Scalar(8, 150, 100), Scalar(13, 255, 255), mask1);   // Lower red range
+    inRange(hsv, Scalar(167, 150, 100), Scalar(180, 255, 255), mask2); // Upper red range
 
     mask = mask1 | mask2;
     
     return mask;
 }
 
-std::string QRDetector::detect(const cv::Mat& frame) {
-    cv::Mat mask = extractRedRegion(frame);
-    std::vector<std::vector<cv::Point>> contours;
+string QRDetector::detect(const Mat& frame) {
+    Mat mask = extractRedRegion(frame);
+    vector<vector<Point>> contours;
 
     Mat RGBmask;
-    cv::cvtColor(mask, RGBmask, cv::COLOR_GRAY2BGR);
+    cvtColor(mask, RGBmask, COLOR_GRAY2BGR);
     RGBmask.copyTo(win[1]);
 
-    cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
     for (const auto& contour : contours) {
-        cv::Rect bbox = cv::boundingRect(contour);
-        bbox &= cv::Rect(0, 0, frame.cols, frame.rows);
+        Rect bbox = boundingRect(contour);
+        bbox &= Rect(0, 0, frame.cols, frame.rows);
         if (bbox.width <= 0 || bbox.height <= 0) continue;
 
-        cv::Rect safeBox = bbox & cv::Rect(0, 0, frame.cols, frame.rows);
+        Rect safeBox = bbox & Rect(0, 0, frame.cols, frame.rows);
         if (safeBox.width > 0 && safeBox.height > 0) {
-            cv::Mat cropped = frame(safeBox);
+            cropped = frame(safeBox);
+            
             if (!cropped.empty()) {
-                cv::Mat upscaled;
-                cv::resize(cropped, upscaled, cv::Size(), 2.0, 2.0, cv::INTER_LINEAR);
-                imshow("QR Cropped", cropped);
-                imshow("QR Upscaled", upscaled);
-                cv::QRCodeDetector qrDecoder;
+                resize(cropped, upscaled, Size(), 2.0, 2.0, INTER_LINEAR);
+                QRCodeDetector qrDecoder;
                 
                 if (!upscaled.empty() && upscaled.cols > 0 && upscaled.rows > 0) {
-                    std::string data = qrDecoder.detectAndDecode(upscaled);
-                    if (!data.empty())
-                        cout << "found\n";
+                    string data = qrDecoder.detectAndDecode(upscaled);
+                    if (!data.empty()) {
+                        cout << "Found\n";
+                        imshow("QR Cropped", cropped);
                         return data;
+                    }
                 }
-
             }
         }
     }

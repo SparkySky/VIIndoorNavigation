@@ -7,7 +7,6 @@ using namespace std;
 
 class GridRouteReader {
 public:
-
     vector<string> gridLoader(const string& filename);
 
 private:

@@ -1,6 +1,7 @@
 #include "Text2Speech.h"
 #include <sapi.h>   
 
+// Using Microsoft Narrator
 void Text2Speech::speak(const std::string& message) {
     ISpVoice* pVoice = nullptr;
     if (FAILED(::CoInitialize(nullptr))) return;
