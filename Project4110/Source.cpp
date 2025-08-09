@@ -3,7 +3,7 @@
 #include <opencv2/highgui/highgui.hpp> // GUI functions
 
 // Partitioning
-#include	"Supp.h"
+#include "Supp.h"
 
 // Created Modules
 #include "QRDetector.h"
@@ -17,7 +17,7 @@ using namespace std;
 using namespace cv;
 
 // Partition Config
-int const imgPerCol = 1, imgPerRow = 2;
+int const imgPerCol = 1, imgPerRow = 4;
 Mat largeWin, win[imgPerCol * imgPerRow],
     legend[imgPerCol * imgPerRow];
 
@@ -80,14 +80,15 @@ int main() {
             }
 
         }
+
+        resize(largeWin, largeWin, cv::Size(1300, 270));
+        imshow("Process", largeWin);   // Show Process 
         if (waitKey(1) == 'x') {
             locationID = "";
             destNode = "";
             tripManager.setPath(vector<string> {});
             narrate.speak("Navigation cancelled");
         }
-
-        imshow("Before and after", largeWin);
         if (waitKey(1) == 'q') break;
     }
 
