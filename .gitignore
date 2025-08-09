@@ -1,5 +1,6 @@
 # Folder to ignore
 .vs/
+x64/
 
 # Prerequisites
 *.d
