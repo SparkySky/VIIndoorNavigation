@@ -11,7 +11,6 @@ using namespace std;
 
 //using json = nlohmann::json;
 
-// read grid
 vector<string> GridRouteReader::gridLoader(const string& filename) {
     grid.clear();
     ifstream file(filename);
@@ -24,21 +23,17 @@ vector<string> GridRouteReader::gridLoader(const string& filename) {
     string line;
     while (getline(file, line)) {
         if (!line.empty())
-        grid.push_back(line);
+            grid.push_back(line);
     }
     file.close();
-//-------------------------MANUALLY ASSIGN LANDMARKS-----------------------------
-    landmarks["Library"]  = {2, 4}; 
-    landmarks["Fountain"] = {4, 1}; 
 
-    
+    // Manually assign landmarks (row, col)
+    landmarks["Library"] = {2, 4};
+    landmarks["Fountain"] = {4, 1};
+
     return grid;
 }
 
-
-
-
-//A*
 vector<pair<int, int>> GridRouteReader::findPath(pair<int, int> start, pair<int, int> goal) const {
     if (grid.empty()) return {};
 
@@ -49,45 +44,35 @@ vector<pair<int, int>> GridRouteReader::findPath(pair<int, int> start, pair<int,
     vector<vector<int>> intGrid(rows, vector<int>(cols, 0));
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            intGrid[i][j] = (grid[i][j] == '1');
+            intGrid[i][j] = (grid[i][j] == '1') ? 1 : 0;
         }
     }
 
-struct Node {
-    int x, y;
-    float g, h;
-    float f() const { return g + h; }
-};
+    struct Node {
+        int x, y;
+        float g, h;
+        float f() const { return g + h; }
+    };
 
-struct NodeCompare {
-    bool operator()(const Node& a, const Node& b) const {
-        return a.f() > b.f();
-    }
-};
+    struct NodeCompare {
+        bool operator()(const Node& a, const Node& b) const {
+            return a.f() > b.f();
+        }
+    };
 
-const vector<pair<int, int>> directions = {
-    {-1, 0}, {-1, 1}, {0, 1}, {1, 1},
-    {1, 0}, {1, -1}, {0, -1}, {-1, -1}
-};
+    const vector<pair<int, int>> directions = {
+        {-1, 0}, {-1, 1}, {0, 1}, {1, 1},
+        {1, 0}, {1, -1}, {0, -1}, {-1, -1}
+    };
 
-inline bool isValid(int x, int y, int rows, int cols, const vector<vector<int>>& grid) {
-    return x >= 0 && y >= 0 && x < rows && y < cols && grid[x][y] == 0;
-}
+    auto isValid = [](int x, int y, int rows, int cols, const vector<vector<int>>& grid) {
+        return x >= 0 && y >= 0 && x < rows && y < cols && grid[x][y] == 0;
+    };
 
-inline float heuristic(int x1, int y1, int x2, int y2) {
-    return sqrtf((x1 - x2) * (x1 - x2) +
-                 (y1 - y2) * (y1 - y2));
-}
-
-vector<pair<int, int>> aStarSearch(
-    const vector<vector<int>>& grid,
-    pair<int, int> start,
-    pair<int, int> goal
-) {
-    int rows = grid.size();
-    int cols = grid[0].size(); //crashed
-    if (grid.empty() || grid[0].empty()) return {};
-
+    auto heuristic = [](int x1, int y1, int x2, int y2) {
+        return sqrtf((x1 - x2) * (x1 - x2) +
+                     (y1 - y2) * (y1 - y2));
+    };
 
     vector<vector<float>> gCost(rows, vector<float>(cols, numeric_limits<float>::infinity()));
     vector<vector<bool>> closed(rows, vector<bool>(cols, false));
@@ -95,9 +80,8 @@ vector<pair<int, int>> aStarSearch(
 
     priority_queue<Node, vector<Node>, NodeCompare> openList;
 
-    Node startNode = {start.first, start.second, 0.0f, heuristic(start.first, start.second, goal.first, goal.second), nullptr};
-    openList.push(startNode);
     gCost[start.first][start.second] = 0.0f;
+    openList.push({start.first, start.second, 0.0f, heuristic(start.first, start.second, goal.first, goal.second)});
 
     while (!openList.empty()) {
         Node current = openList.top();
@@ -124,10 +108,12 @@ vector<pair<int, int>> aStarSearch(
             int nx = current.x + dir.first;
             int ny = current.y + dir.second;
 
-            if (!isValid(nx, ny, grid) || closed[nx][ny]) continue;
+            if (!isValid(nx, ny, rows, cols, intGrid) || closed[nx][ny]) continue;
 
             const float STRAIGHT_COST = 1.0f;
             const float DIAGONAL_COST = 1.414f;
+
+            float moveCost = (dir.first != 0 && dir.second != 0) ? DIAGONAL_COST : STRAIGHT_COST;
 
             float tentativeG = gCost[current.x][current.y] + moveCost;
 
@@ -135,11 +121,12 @@ vector<pair<int, int>> aStarSearch(
                 gCost[nx][ny] = tentativeG;
                 parent[nx][ny] = {current.x, current.y};
                 float h = heuristic(nx, ny, goal.first, goal.second);
-                openList.push({nx, ny, tentativeG, h, nullptr});
+                openList.push({nx, ny, tentativeG, h});
             }
         }
     }
 
+    // No path found
     return {};
 }
 
