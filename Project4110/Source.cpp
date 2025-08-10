@@ -23,7 +23,7 @@ Mat largeWin, win[imgPerCol * imgPerRow],
 
     
 int main(){
-    GridRouteReader reader;
+       GridRouteReader reader;
     auto gridData = reader.gridLoader("NavigationFile/RouteGrid.txt");
     auto intGrid = reader.toIntGrid(gridData);
     auto landmarks = reader.getLandmarks();
@@ -34,7 +34,7 @@ int main(){
         cerr << "You are currently at the destination!\n";
         return -1;
     }
-    
+
     pair<int, int> currentPos = landmarks[scannedCurrentLandmark];
     cout << "Current position (Based on QR): " << scannedCurrentLandmark << endl;
 
@@ -45,15 +45,39 @@ int main(){
         return -1;
     }
     pair<int, int> goal = landmarks[scannedDestinationLandmark];
-    cout << "Destination position: " << scannedDestinationLandmark << endl";
+    cout << "Destination position: " << scannedDestinationLandmark << endl;
+
+    //-------------------------------test--------------------
+
+    if (intGrid[currentPos.first][currentPos.second] == 1) {
+        cerr << "Error: Start position is blocked (1).\n";
+        return -1;
+    }
+
+    if (intGrid[goal.first][goal.second] == 1) {
+        cerr << "Error: Goal position is blocked (1).\n";
+        return -1;
+    }
+    //-------------------------------test--------------------
 
     Navigator astar;
     auto path = astar.findPath(intGrid, currentPos, goal);
 
     cout << "Path from current to destination:\n";
-    for (auto [x, y] : path) {
-        cout << "(" << x << "," << y << ") ";
+    for (const auto& coord : path) {
+        cout << "(" << coord.first << "," << coord.second << ") ";
     }
+    cout << endl;
+
+    // this is for testing navigation only
+    cout << "Start: (" << currentPos.first << ", " << currentPos.second << ")\n";
+    cout << "Goal: (" << goal.first << ", " << goal.second << ")\n";
+    cout << "Grid at start: " << intGrid[currentPos.first][currentPos.second] << endl;
+    cout << "Grid at goal: " << intGrid[goal.first][goal.second] << endl;
+
+
+
+
     cout << endl;
 
     // VideoCapture part left as is
@@ -65,6 +89,7 @@ int main(){
 
     return 0;
 }
+
     // Create module object
     QRDetector qrDetector;
     TripManager tripManager;
@@ -114,6 +139,7 @@ int main(){
     cv::destroyAllWindows();
     return 0;
 }
+
 
 
 
