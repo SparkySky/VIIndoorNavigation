@@ -27,26 +27,22 @@ vector<string> GridRouteReader::gridLoader(const string& filename) {
     }
     file.close();
 
-    // Manually assign landmarks (row, col)
+    // landmarks (row, col)
     landmarks["Library"] = {2, 4};
     landmarks["Fountain"] = {4, 1};
 
     return grid;
 }
 
-vector<pair<int, int>> GridRouteReader::findPath(pair<int, int> start, pair<int, int> goal) const {
-    if (grid.empty()) return {};
+vector<pair<int, int>> Navigator::findPath(
+    const vector<vector<int>>& grid,
+    pair<int, int> start,
+    pair<int, int> goal
+) {
+    if (grid.empty() || grid[0].empty()) return {};
 
     int rows = grid.size();
     int cols = grid[0].size();
-
-    // Convert char grid to int grid (0 = walkable, 1 = wall)
-    vector<vector<int>> intGrid(rows, vector<int>(cols, 0));
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            intGrid[i][j] = (grid[i][j] == '1') ? 1 : 0;
-        }
-    }
 
     struct Node {
         int x, y;
@@ -65,13 +61,12 @@ vector<pair<int, int>> GridRouteReader::findPath(pair<int, int> start, pair<int,
         {1, 0}, {1, -1}, {0, -1}, {-1, -1}
     };
 
-    auto isValid = [](int x, int y, int rows, int cols, const vector<vector<int>>& grid) {
+    auto isValid = [&](int x, int y) {
         return x >= 0 && y >= 0 && x < rows && y < cols && grid[x][y] == 0;
     };
 
-    auto heuristic = [](int x1, int y1, int x2, int y2) {
-        return sqrtf((x1 - x2) * (x1 - x2) +
-                     (y1 - y2) * (y1 - y2));
+    auto heuristic = [&](int x1, int y1, int x2, int y2) {
+        return sqrtf((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
     };
 
     vector<vector<float>> gCost(rows, vector<float>(cols, numeric_limits<float>::infinity()));
@@ -108,11 +103,10 @@ vector<pair<int, int>> GridRouteReader::findPath(pair<int, int> start, pair<int,
             int nx = current.x + dir.first;
             int ny = current.y + dir.second;
 
-            if (!isValid(nx, ny, rows, cols, intGrid) || closed[nx][ny]) continue;
+            if (!isValid(nx, ny) || closed[nx][ny]) continue;
 
             const float STRAIGHT_COST = 1.0f;
             const float DIAGONAL_COST = 1.414f;
-
             float moveCost = (dir.first != 0 && dir.second != 0) ? DIAGONAL_COST : STRAIGHT_COST;
 
             float tentativeG = gCost[current.x][current.y] + moveCost;
@@ -126,7 +120,6 @@ vector<pair<int, int>> GridRouteReader::findPath(pair<int, int> start, pair<int,
         }
     }
 
-    // No path found
     return {};
 }
 
