@@ -11,6 +11,7 @@ using namespace std;
 
 //using json = nlohmann::json;
 
+
 vector<string> GridRouteReader::gridLoader(const string& filename) {
     grid.clear();
     ifstream file(filename);
@@ -21,24 +22,35 @@ vector<string> GridRouteReader::gridLoader(const string& filename) {
     }
 
     string line;
+    int lineno = 0;  //   show grid
     while (getline(file, line)) {
+        cout << lineno << ": '" << line << "'" << endl; // show grid
+        lineno++; // show grid
         if (!line.empty())
             grid.push_back(line);
     }
     file.close();
 
-    // landmarks (row, col)
-    landmarks["Library"] = {2, 4};
-    landmarks["Fountain"] = {4, 1};
+	// landmarks (row, col), starts with (0, 0) ends with (99, 99)
+    landmarks["Library"] = { 18, 4  };
+    landmarks["Fountain"] = { 55, 97 };
+
 
     return grid;
 }
 
-unordered_map<string, pair<int,int>> GridRouteReader::getLandmarks() const {
-    return landmarks;
+
+vector<vector<int>> GridRouteReader::toIntGrid(const vector<string>& grid) const {
+    vector<vector<int>> intGrid;
+    for (const auto& row : grid) {
+        vector<int> intRow;
+        for (char c : row) {
+            intRow.push_back(c == '1' ? 1 : 0);
+        }
+        intGrid.push_back(intRow);
+    }
+    return intGrid;
 }
-
-
 
 //astar
 vector<pair<int, int>> Navigator::findPath(
@@ -70,20 +82,20 @@ vector<pair<int, int>> Navigator::findPath(
 
     auto isValid = [&](int x, int y) {
         return x >= 0 && y >= 0 && x < rows && y < cols && grid[x][y] == 0;
-    };
+        };
 
     auto heuristic = [&](int x1, int y1, int x2, int y2) {
         return sqrtf((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
-    };
+        };
 
     vector<vector<float>> gCost(rows, vector<float>(cols, numeric_limits<float>::infinity()));
     vector<vector<bool>> closed(rows, vector<bool>(cols, false));
-    vector<vector<pair<int, int>>> parent(rows, vector<pair<int, int>>(cols, {-1, -1}));
+    vector<vector<pair<int, int>>> parent(rows, vector<pair<int, int>>(cols, { -1, -1 }));
 
     priority_queue<Node, vector<Node>, NodeCompare> openList;
 
     gCost[start.first][start.second] = 0.0f;
-    openList.push({start.first, start.second, 0.0f, heuristic(start.first, start.second, goal.first, goal.second)});
+    openList.push({ start.first, start.second, 0.0f, heuristic(start.first, start.second, goal.first, goal.second) });
 
     while (!openList.empty()) {
         Node current = openList.top();
@@ -94,7 +106,7 @@ vector<pair<int, int>> Navigator::findPath(
             int cx = current.x;
             int cy = current.y;
             while (cx != -1 && cy != -1) {
-                path.push_back({cx, cy});
+                path.push_back({ cx, cy });
                 auto p = parent[cx][cy];
                 cx = p.first;
                 cy = p.second;
@@ -120,13 +132,12 @@ vector<pair<int, int>> Navigator::findPath(
 
             if (tentativeG < gCost[nx][ny]) {
                 gCost[nx][ny] = tentativeG;
-                parent[nx][ny] = {current.x, current.y};
+                parent[nx][ny] = { current.x, current.y };
                 float h = heuristic(nx, ny, goal.first, goal.second);
-                openList.push({nx, ny, tentativeG, h});
+                openList.push({ nx, ny, tentativeG, h });
             }
         }
     }
 
     return {};
 }
-
