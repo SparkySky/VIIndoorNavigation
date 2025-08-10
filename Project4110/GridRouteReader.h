@@ -12,6 +12,8 @@ public:
 
     vector<pair<int, int>> findPath(pair<int, int> start, pair<int, int> goal) const;
 
+    unordered_map<string, pair<int,int>> landmarks;
+
 private:
     vector<string> grid;
 };
