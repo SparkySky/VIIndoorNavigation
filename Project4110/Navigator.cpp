@@ -4,13 +4,12 @@
 #include <cmath>
 #include <algorithm>
 #include <fstream>
-#include <sstream>
-#include "nlohmann/json.hpp"
+//#include "nlohmann/json.hpp"
 #include <iostream>
 
 using namespace std;
 
-using json = nlohmann::json;
+//using json = nlohmann::json;
 
 // read grid
 vector<string> GridRouteReader::gridLoader(const string& filename) {
@@ -38,89 +37,90 @@ vector<string> GridRouteReader::gridLoader(const string& filename) {
 //A*
 struct Node {
     int x, y;
-    double g, h;
-    Node* parent;
-
-    double f() const { return g + h; }
-
-    Node(int x, int y, double g, double h, Node* parent = nullptr)
-        : x(x), y(y), g(g), h(h), parent(parent) {}
+    float g, h;
+    float f() const { return g + h; }
 };
 
-struct CompareNode {
-    bool operator()(const Node* a, const Node* b) {
-        return a->f() > b->f();
+struct NodeCompare {
+    bool operator()(const Node& a, const Node& b) const {
+        return a.f() > b.f();
     }
 };
 
-inline double heuristic(int x1, int y1, int x2, int y2) {
-    double dx = abs(x1 - x2);
-    double dy = abs(y1 - y2);
-    return (dx + dy) + (sqrt(2) - 2) * min(dx, dy);
+const vector<pair<int, int>> directions = {
+    {-1, 0}, {-1, 1}, {0, 1}, {1, 1},
+    {1, 0}, {1, -1}, {0, -1}, {-1, -1}
+};
+
+inline bool isValid(int x, int y, int rows, int cols, const vector<vector<int>>& grid) {
+    return x >= 0 && y >= 0 && x < rows && y < cols && grid[x][y] == 0;
 }
 
-inline bool isValid(int x, int y, const vector<vector<int>>& grid) {
-    return x >= 0 && y >= 0 &&
-           x < (int)grid.size() &&
-           y < (int)grid[0].size() &&
-           grid[x][y] == 0;
+inline float heuristic(int x1, int y1, int x2, int y2) {
+    return sqrtf((x1 - x2) * (x1 - x2) +
+                 (y1 - y2) * (y1 - y2));
 }
 
-vector<pair<int, int>> aStar(
+vector<pair<int, int>> aStarSearch(
     const vector<vector<int>>& grid,
     pair<int, int> start,
     pair<int, int> goal
 ) {
-    vector<Node*> allNodes;
-    priority_queue<Node*, vector<Node*>, CompareNode> openSet;
-    vector<vector<bool>> closedSet(grid.size(), vector<bool>(grid[0].size(), false));
+    int rows = grid.size();
+    int cols = grid[0].size(); //crashed
+    if (grid.empty() || grid[0].empty()) return {};
 
-    Node* startNode = new Node(start.first, start.second, 0.0, heuristic(start.first, start.second, goal.first, goal.second));
-    allNodes.push_back(startNode);
-    openSet.push(startNode);
 
-    vector<pair<int, int>> directions = {
-        {1, 0}, {-1, 0}, {0, 1}, {0, -1}, 
-        {1, 1}, {-1, -1}, {1, -1}, {-1, 1}
-    };
+    vector<vector<float>> gCost(rows, vector<float>(cols, numeric_limits<float>::infinity()));
+    vector<vector<bool>> closed(rows, vector<bool>(cols, false));
+    vector<vector<pair<int, int>>> parent(rows, vector<pair<int, int>>(cols, {-1, -1}));
 
-    while (!openSet.empty()) {
-        Node* current = openSet.top();
-        openSet.pop();
-        
-        if (closedSet[current->x][current->y]) continue;
-        
-        if (current->x == goal.first && current->y == goal.second) {
+    priority_queue<Node, vector<Node>, NodeCompare> openList;
+
+    Node startNode = {start.first, start.second, 0.0f, heuristic(start.first, start.second, goal.first, goal.second), nullptr};
+    openList.push(startNode);
+    gCost[start.first][start.second] = 0.0f;
+
+    while (!openList.empty()) {
+        Node current = openList.top();
+        openList.pop();
+
+        if (current.x == goal.first && current.y == goal.second) {
             vector<pair<int, int>> path;
-            Node* iter = current;
-            while (iter) {
-                path.push_back({iter->x, iter->y});
-                iter = iter->parent;
+            int cx = current.x;
+            int cy = current.y;
+            while (cx != -1 && cy != -1) {
+                path.push_back({cx, cy});
+                auto p = parent[cx][cy];
+                cx = p.first;
+                cy = p.second;
             }
             reverse(path.begin(), path.end());
-            for (Node* n : allNodes) delete n;
-            allNodes.clear();
-
             return path;
         }
-        closedSet[current->x][current->y] = true;
+
+        if (closed[current.x][current.y]) continue;
+        closed[current.x][current.y] = true;
 
         for (auto& dir : directions) {
-            int nx = current->x + dir.first;
-            int ny = current->y + dir.second;
+            int nx = current.x + dir.first;
+            int ny = current.y + dir.second;
 
-            if (isValid(nx, ny, grid) && !closedSet[nx][ny]) {
-                double stepCost = (dir.first != 0 && dir.second != 0) ? sqrt(2) : 1;
-                double newG = current->g + stepCost;
-                double newH = heuristic(nx, ny, goal.first, goal.second);
-                openSet.push(new Node(nx, ny, newG, newH, current));
-                
-                allNodes.push_back(neighbor);
-                openSet.push(neighbor);
+            if (!isValid(nx, ny, grid) || closed[nx][ny]) continue;
+
+            const float STRAIGHT_COST = 1.0f;
+            const float DIAGONAL_COST = 1.414f;
+
+            float tentativeG = gCost[current.x][current.y] + moveCost;
+
+            if (tentativeG < gCost[nx][ny]) {
+                gCost[nx][ny] = tentativeG;
+                parent[nx][ny] = {current.x, current.y};
+                float h = heuristic(nx, ny, goal.first, goal.second);
+                openList.push({nx, ny, tentativeG, h, nullptr});
             }
         }
     }
-    for (Node* n : allNodes) delete n;
-    allNodes.clear();
+
     return {};
 }
