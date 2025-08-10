@@ -24,11 +24,11 @@ Mat largeWin, win[imgPerCol * imgPerRow],
 int main() {
     GridRouteReader reader;
     reader gridLoader("NavigationFile\RouteGrid.txt");
-   vector<vector<int>> grid(gridData.size(), vector<int>(gridData[0].size(), 0));
-    for (int i = 0; i < gridData.size(); i++) {
-        for (int j = 0; j < gridData[i].size(); j++) {
-            grid[i][j] = (gridData[i][j] == '1');
-        }
+    auto gridData = reader.gridLoader("map.txt");
+    auto intGrid  = reader.toIntGrid(gridData);
+
+    Navigatior astar;
+    auto path = astar.findPath(intGrid, {0,0}, {5,5}); // This is a manually input coordinates, I need to find a way to make this automatic from user input
     }
 
     pair<int,int> start = {0, 0};
@@ -95,5 +95,6 @@ int main() {
     cv::destroyAllWindows();
     return 0;
 }
+
 
 
