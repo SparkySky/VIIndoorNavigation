@@ -25,28 +25,27 @@ Mat largeWin, win[imgPerCol * imgPerRow],
 int main(){
     GridRouteReader reader;
     auto gridData = reader.gridLoader("NavigationFile/RouteGrid.txt");
-    auto intGrid  = reader.toIntGrid(gridData);
+    auto intGrid = reader.toIntGrid(gridData);
     auto landmarks = reader.getLandmarks();
 
     // Current position
     string scannedCurrentLandmark = "Library";  // REPLACE THIS WITH INPUT
     if (landmarks.find(scannedCurrentLandmark) == landmarks.end()) {
-        cerr << "Error: scanned landmark not found!\n";
+        cerr << "You are currently at the destination!\n";
         return -1;
     }
+    
     pair<int, int> currentPos = landmarks[scannedCurrentLandmark];
-    cout << "Current position (Based on QR): " << scannedCurrentLandmark
-         << " at (" << currentPos.first << ", " << currentPos.second << ")\n";
+    cout << "Current position (Based on QR): " << scannedCurrentLandmark << endl;
 
-    // Destination
+    // Destination position
     string scannedDestinationLandmark = "Fountain";  // REPLACE THIS WITH USER INPUT
     if (landmarks.find(scannedDestinationLandmark) == landmarks.end()) {
-        cerr << "Error: destination landmark not found!\n";
+        cerr << "You are currently at the desitnation!\n";
         return -1;
     }
     pair<int, int> goal = landmarks[scannedDestinationLandmark];
-    cout << "Destination position: " << scannedDestinationLandmark
-         << " at (" << goal.first << ", " << goal.second << ")\n";
+    cout << "Destination position: " << scannedDestinationLandmark << endl";
 
     Navigator astar;
     auto path = astar.findPath(intGrid, currentPos, goal);
@@ -54,13 +53,16 @@ int main(){
     cout << "Path from current to destination:\n";
     for (auto [x, y] : path) {
         cout << "(" << x << "," << y << ") ";
+    }
     cout << endl;
-    
+
+    // VideoCapture part left as is
     VideoCapture cap(0);
     if (!cap.isOpened()) {
         cerr << "Camera not accessible.\n";
         return -1;
     }
+
     return 0;
 }
     // Create module object
@@ -112,6 +114,7 @@ int main(){
     cv::destroyAllWindows();
     return 0;
 }
+
 
 
 
