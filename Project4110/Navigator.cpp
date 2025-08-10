@@ -24,7 +24,7 @@ vector<string> GridRouteReader::gridLoader(const string& filename) {
 
     string line;
     while (getline(file, line)) {
-        if (!file.empty())
+        if (!line.empty())
         grid.push_back(line);
     }
 
@@ -71,10 +71,12 @@ vector<pair<int, int>> aStar(
     pair<int, int> start,
     pair<int, int> goal
 ) {
+    vector<Node*> allNodes;
     priority_queue<Node*, vector<Node*>, CompareNode> openSet;
     vector<vector<bool>> closedSet(grid.size(), vector<bool>(grid[0].size(), false));
 
-    Node* startNode = new Node(start.first, start.second, 0, heuristic(start.first, start.second, goal.first, goal.second));
+    Node* startNode = new Node(start.first, start.second, 0.0, heuristic(start.first, start.second, goal.first, goal.second));
+    allNodes.push_back(startNode);
     openSet.push(startNode);
 
     vector<pair<int, int>> directions = {
@@ -85,18 +87,22 @@ vector<pair<int, int>> aStar(
     while (!openSet.empty()) {
         Node* current = openSet.top();
         openSet.pop();
-
+        
+        if (closedSet[current->x][current->y]) continue;
+        
         if (current->x == goal.first && current->y == goal.second) {
             vector<pair<int, int>> path;
-            while (current) {
-                path.push_back({current->x, current->y});
-                current = current->parent;
+            Node* iter = current;
+            while (iter) {
+                path.push_back({iter->x, iter->y});
+                iter = iter->parent;
             }
             reverse(path.begin(), path.end());
+            for (Node* n : allNodes) delete n;
+            allNodes.clear();
+
             return path;
         }
-
-        if (closedSet[current->x][current->y]) continue;
         closedSet[current->x][current->y] = true;
 
         for (auto& dir : directions) {
@@ -108,28 +114,13 @@ vector<pair<int, int>> aStar(
                 double newG = current->g + stepCost;
                 double newH = heuristic(nx, ny, goal.first, goal.second);
                 openSet.push(new Node(nx, ny, newG, newH, current));
+                
+                allNodes.push_back(neighbor);
+                openSet.push(neighbor);
             }
         }
     }
-
+    for (Node* n : allNodes) delete n;
+    allNodes.clear();
     return {};
 }
-
-vector<vector<int>> loadGridFromFile(const string& filename) {
-    ifstream file(filename);
-    vector<vector<int>> grid;
-    string line;
-
-    while (getline(file, line)) {
-        istringstream iss(line);
-        vector<int> row;
-        int value;
-        while (iss >> value) {
-            row.push_back(value);
-        }
-        if (!row.empty()) grid.push_back(row);
-    }
-
-    return grid;
-}
-
