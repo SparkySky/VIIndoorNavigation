@@ -38,6 +38,9 @@ unordered_map<string, pair<int,int>> GridRouteReader::getLandmarks() const {
     return landmarks;
 }
 
+
+
+//astar
 vector<pair<int, int>> Navigator::findPath(
     const vector<vector<int>>& grid,
     pair<int, int> start,
@@ -126,3 +129,4 @@ vector<pair<int, int>> Navigator::findPath(
 
     return {};
 }
+
