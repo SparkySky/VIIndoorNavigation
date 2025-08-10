@@ -26,9 +26,9 @@ int main(){
     GridRouteReader reader;
     auto gridData = reader.gridLoader("NavigationFile/RouteGrid.txt");
     auto intGrid  = reader.toIntGrid(gridData);
-    pair<int, int> currentPos = {2, 4};
-
-    string scannedName = "Library";
+    
+    pair<int, int> currentPos = {2, 4}; // manually enter current pos for now
+    string scannedName = "Library"; // manually enter destination for now
 
     Navigator astar;
     auto landmarks = reader.getLandmarks();
@@ -103,6 +103,7 @@ int main(){
     cv::destroyAllWindows();
     return 0;
 }
+
 
 
 
