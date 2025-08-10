@@ -26,22 +26,27 @@ int main(){
     GridRouteReader reader;
     auto gridData = reader.gridLoader("NavigationFile/RouteGrid.txt");
     auto intGrid  = reader.toIntGrid(gridData);
-    
-    pair<int, int> currentPos = {2, 4}; // manually enter current pos for now
-    string scannedName = "Library"; // manually enter destination for now
 
+     pair<int, int> currentPos;
+    pair<int, int> goal;
+
+    // current pos
+    auto it = landmarks.begin(); // replace this with the qr code scanned as INPUT
+    currentPos = it->second;
+    cout << "Current position set to: " << it->first
+         << " at (" << currentPos.first << ", " << currentPos.second << ")\n";
+
+    // destination
+    ++it;
+    goal = it->second;
+    cout << "Destination set to: " << it->first
+         << " at (" << goal.first << ", " << goal.second << ")\n";
+
+    // Run pathfinding
     Navigator astar;
-    auto landmarks = reader.getLandmarks();
-
-    if (landmarks.find(scannedName) == landmarks.end()) {
-        cerr << "Error: Landmark not found!\n";
-        return -1;
-    }
-
-    pair<int, int> goal = landmarks[scannedName];
-
     auto path = astar.findPath(intGrid, currentPos, goal);
 
+    cout << "Calculated path:\n";
     for (auto [x, y] : path) {
         cout << "(" << x << "," << y << ") ";
     }
@@ -103,6 +108,7 @@ int main(){
     cv::destroyAllWindows();
     return 0;
 }
+
 
 
 
