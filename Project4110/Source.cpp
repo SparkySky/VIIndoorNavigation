@@ -24,6 +24,22 @@ Mat largeWin, win[imgPerCol * imgPerRow],
 int main() {
     GridRouteReader reader;
     reader gridLoader("NavigationFile\RouteGrid.txt");
+   vector<vector<int>> grid(gridData.size(), vector<int>(gridData[0].size(), 0));
+    for (int i = 0; i < gridData.size(); i++) {
+        for (int j = 0; j < gridData[i].size(); j++) {
+            grid[i][j] = (gridData[i][j] == '1');
+        }
+    }
+
+    pair<int,int> start = {0, 0};
+    pair<int,int> goal = {99, 99};
+
+    auto path = aStar(grid, start, goal);
+
+    for (auto [x, y] : path) {
+        cout << "(" << x << "," << y << ") ";
+    }
+    
     VideoCapture cap(0);
     if (!cap.isOpened()) {
         cerr << "Camera not accessible.\n";
@@ -79,4 +95,5 @@ int main() {
     cv::destroyAllWindows();
     return 0;
 }
+
 
