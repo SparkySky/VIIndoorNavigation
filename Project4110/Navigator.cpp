@@ -80,6 +80,18 @@ vector<pair<int, int>> Navigator::findPath(
         {1, 0}, {1, -1}, {0, -1}, {-1, -1}
     };
 
+    auto directionToText = [](int dx, int dy) {
+        if (dx == -1 && dy == 0) return "up";
+        if (dx == -1 && dy == 1) return "up-right";
+        if (dx == 0 && dy == 1) return "right";
+        if (dx == 1 && dy == 1) return "down-right";
+        if (dx == 1 && dy == 0) return "down";
+        if (dx == 1 && dy == -1) return "down-left";
+        if (dx == 0 && dy == -1) return "left";
+        if (dx == -1 && dy == -1) return "up-left";
+        return "unknown";
+    };
+
     auto isValid = [&](int x, int y) {
         return x >= 0 && y >= 0 && x < rows && y < cols && grid[x][y] == 0;
         };
@@ -121,6 +133,8 @@ vector<pair<int, int>> Navigator::findPath(
         for (auto& dir : directions) {
             int nx = current.x + dir.first;
             int ny = current.y + dir.second;
+
+            cout << "Checking direction: " << directionToText(dir.first, dir.second) << endl;
 
             if (!isValid(nx, ny) || closed[nx][ny]) continue;
 
