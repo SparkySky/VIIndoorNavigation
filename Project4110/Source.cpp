@@ -26,32 +26,34 @@ int main(){
     GridRouteReader reader;
     auto gridData = reader.gridLoader("NavigationFile/RouteGrid.txt");
     auto intGrid  = reader.toIntGrid(gridData);
-
     auto landmarks = reader.getLandmarks();
 
-    pair<int, int> currentPos;
-    pair<int, int> goal;
-
-    // current pos
-    auto it = landmarks.begin(); // replace this with the qr code scanned as INPUT
-    currentPos = it->second;
-    cout << "Current position set to: " << it->first
+    // Current position
+    string scannedCurrentLandmark = "Library";  // REPLACE THIS WITH INPUT
+    if (landmarks.find(scannedCurrentLandmark) == landmarks.end()) {
+        cerr << "Error: scanned landmark not found!\n";
+        return -1;
+    }
+    pair<int, int> currentPos = landmarks[scannedCurrentLandmark];
+    cout << "Current position (Based on QR): " << scannedCurrentLandmark
          << " at (" << currentPos.first << ", " << currentPos.second << ")\n";
 
-    // destination
-    ++it;
-    goal = it->second;
-    cout << "Destination set to: " << it->first
+    // Destination
+    string scannedDestinationLandmark = "Fountain";  // REPLACE THIS WITH USER INPUT
+    if (landmarks.find(scannedDestinationLandmark) == landmarks.end()) {
+        cerr << "Error: destination landmark not found!\n";
+        return -1;
+    }
+    pair<int, int> goal = landmarks[scannedDestinationLandmark];
+    cout << "Destination position: " << scannedDestinationLandmark
          << " at (" << goal.first << ", " << goal.second << ")\n";
 
-    // Run pathfinding
     Navigator astar;
     auto path = astar.findPath(intGrid, currentPos, goal);
 
-    cout << "Calculated path:\n";
+    cout << "Path from current to destination:\n";
     for (auto [x, y] : path) {
         cout << "(" << x << "," << y << ") ";
-    }
     cout << endl;
     
     VideoCapture cap(0);
@@ -110,6 +112,7 @@ int main(){
     cv::destroyAllWindows();
     return 0;
 }
+
 
 
 
