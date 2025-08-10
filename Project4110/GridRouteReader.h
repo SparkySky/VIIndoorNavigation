@@ -12,14 +12,14 @@ public:
 
     vector<string> gridLoader(const string& filename);
 
-    vector<pair<int, int>> findPath(pair<int, int> start, pair<int, int> goal) const; 
+    vector<vector<int>> toIntGrid(const vector<string>& grid) const;
 
-    unordered_map<string, pair<int,int>> getLandmarks() const {
+    unordered_map<string, pair<int, int>> getLandmarks() const {
         return landmarks;
     }
 
 
 private:
     vector<string> grid;
-    unordered_map<string, pair<int,int>> landmarks;
+    unordered_map<string, pair<int, int>> landmarks;
 };
