@@ -24,6 +24,7 @@ vector<string> GridRouteReader::gridLoader(const string& filename) {
 
     string line;
     while (getline(file, line)) {
+        if (!file.empty())
         grid.push_back(line);
     }
 
@@ -131,3 +132,4 @@ vector<vector<int>> loadGridFromFile(const string& filename) {
 
     return grid;
 }
+
