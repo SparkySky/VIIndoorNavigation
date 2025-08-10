@@ -35,6 +35,20 @@ vector<string> GridRouteReader::gridLoader(const string& filename) {
 
 
 //A*
+vector<pair<int, int>> GridRouteReader::findPath(pair<int, int> start, pair<int, int> goal) const {
+    if (grid.empty()) return {};
+
+    int rows = grid.size();
+    int cols = grid[0].size();
+
+    // Convert char grid to int grid (0 = walkable, 1 = wall)
+    vector<vector<int>> intGrid(rows, vector<int>(cols, 0));
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            intGrid[i][j] = (grid[i][j] == '1');
+        }
+    }
+
 struct Node {
     int x, y;
     float g, h;
@@ -124,3 +138,4 @@ vector<pair<int, int>> aStarSearch(
 
     return {};
 }
+
