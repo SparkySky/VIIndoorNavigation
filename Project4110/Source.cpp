@@ -22,8 +22,21 @@ Mat largeWin, win[imgPerCol * imgPerRow],
     legend[imgPerCol * imgPerRow];
 
     
-int main(){
-       GridRouteReader reader;
+string directionToText(int dx, int dy) {
+    if (dx == -1 && dy == 0) return "up";
+    if (dx == -1 && dy == 1) return "up-right";
+    if (dx == 0 && dy == 1) return "right";
+    if (dx == 1 && dy == 1) return "down-right";
+    if (dx == 1 && dy == 0) return "down";
+    if (dx == 1 && dy == -1) return "down-left";
+    if (dx == 0 && dy == -1) return "left";
+    if (dx == -1 && dy == -1) return "up-left";
+    return "unknown";
+}
+
+
+int main() {
+    GridRouteReader reader;
     auto gridData = reader.gridLoader("NavigationFile/RouteGrid.txt");
     auto intGrid = reader.toIntGrid(gridData);
     auto landmarks = reader.getLandmarks();
@@ -74,11 +87,17 @@ int main(){
     cout << "Goal: (" << goal.first << ", " << goal.second << ")\n";
     cout << "Grid at start: " << intGrid[currentPos.first][currentPos.second] << endl;
     cout << "Grid at goal: " << intGrid[goal.first][goal.second] << endl;
-
-
-
-
     cout << endl;
+
+    cout << "Directions:\n";
+    for (size_t i = 1; i < path.size(); ++i) {
+        int dx = path[i].first - path[i - 1].first;
+        int dy = path[i].second - path[i - 1].second;
+        string dir = directionToText(dx, dy);
+
+        cout << "From (" << path[i - 1].first << "," << path[i - 1].second << ") to ("
+            << path[i].first << "," << path[i].second << ") - Direction: " << dir << "\n";
+    }
 
     // VideoCapture part left as is
     VideoCapture cap(0);
@@ -139,6 +158,7 @@ int main(){
     cv::destroyAllWindows();
     return 0;
 }
+
 
 
 
