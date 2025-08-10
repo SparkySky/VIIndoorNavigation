@@ -22,10 +22,48 @@ Mat largeWin, win[imgPerCol * imgPerRow],
     legend[imgPerCol * imgPerRow];
 
 int main() {
-    VideoCapture cap(0);    // 0 (Default camera), >= 1 (other input)
+    GridRouteReader reader;
+    auto gridData = reader.gridLoader("NavigationFile/RouteGrid.txt");
+    auto intGrid = reader.toIntGrid(gridData);
+    auto landmarks = reader.getLandmarks();
+
+    // Current position
+    string scannedCurrentLandmark = "Library";  // REPLACE THIS WITH INPUT
+    if (landmarks.find(scannedCurrentLandmark) == landmarks.end()) {
+        cerr << "Error: scanned landmark not found!\n";
+        return -1;
+    }
+    pair<int, int> currentPos = landmarks[scannedCurrentLandmark];
+    cout << "Current position (Based on QR): " << scannedCurrentLandmark
+         << " at (" << currentPos.first << ", " << currentPos.second << ")\n";
+
+    // Destination position
+    string scannedDestinationLandmark = "Fountain";  // REPLACE THIS WITH USER INPUT
+    if (landmarks.find(scannedDestinationLandmark) == landmarks.end()) {
+        cerr << "Error: destination landmark not found!\n";
+        return -1;
+    }
+    pair<int, int> goal = landmarks[scannedDestinationLandmark];
+    cout << "Destination position: " << scannedDestinationLandmark
+         << " at (" << goal.first << ", " << goal.second << ")\n";
+
+    Navigator astar;
+    auto path = astar.findPath(intGrid, currentPos, goal);
+
+    cout << "Path from current to destination:\n";
+    for (auto [x, y] : path) {
+        cout << "(" << x << "," << y << ") ";
+    }
+    cout << endl;
+
+    VideoCapture cap(0);
     if (!cap.isOpened()) {
         cerr << "Camera not accessible.\n";
         return -1;
+    }
+
+    return 0;
+}
     }
 
     // Create module object
@@ -94,4 +132,5 @@ int main() {
     cap.release();
     destroyAllWindows();
     return 0;
+
 }
