@@ -26,8 +26,12 @@ vector<string> GridRouteReader::gridLoader(const string& filename) {
         if (!line.empty())
         grid.push_back(line);
     }
-
     file.close();
+//-------------------------MANUALLY ASSIGN LANDMARKS-----------------------------
+    landmarks["Library"]  = {2, 4}; 
+    landmarks["Fountain"] = {4, 1}; 
+
+    
     return grid;
 }
 
@@ -138,4 +142,5 @@ vector<pair<int, int>> aStarSearch(
 
     return {};
 }
+
 
