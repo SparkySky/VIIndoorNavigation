@@ -18,7 +18,6 @@ public:
         return landmarks;
     }
 
-
 private:
     vector<string> grid;
     unordered_map<string, pair<int, int>> landmarks;
