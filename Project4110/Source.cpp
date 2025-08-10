@@ -21,31 +21,39 @@ int const imgPerCol = 1, imgPerRow = 3;
 Mat largeWin, win[imgPerCol * imgPerRow],
     legend[imgPerCol * imgPerRow];
 
-int main() {
+    
+int main(){
     GridRouteReader reader;
-    reader gridLoader("NavigationFile\RouteGrid.txt");
-    auto gridData = reader.gridLoader("map.txt");
+    auto gridData = reader.gridLoader("NavigationFile/RouteGrid.txt");
     auto intGrid  = reader.toIntGrid(gridData);
+    pair<int, int> currentPos = {2, 4};
 
-    Navigatior astar;
-    auto path = astar.findPath(intGrid, {0,0}, {5,5}); // This is a manually input coordinates, I need to find a way to make this automatic from user input
+    string scannedName = "Library";
+
+    Navigator astar;
+    auto landmarks = reader.getLandmarks();
+
+    if (landmarks.find(scannedName) == landmarks.end()) {
+        cerr << "Error: Landmark not found!\n";
+        return -1;
     }
 
-    pair<int,int> start = {0, 0};
-    pair<int,int> goal = {99, 99};
+    pair<int, int> goal = landmarks[scannedName];
 
-    auto path = aStar(grid, start, goal);
+    auto path = astar.findPath(intGrid, currentPos, goal);
 
     for (auto [x, y] : path) {
         cout << "(" << x << "," << y << ") ";
     }
+    cout << endl;
     
     VideoCapture cap(0);
     if (!cap.isOpened()) {
         cerr << "Camera not accessible.\n";
         return -1;
     }
-
+    return 0;
+}
     // Create module object
     QRDetector qrDetector;
     TripManager tripManager;
@@ -95,6 +103,7 @@ int main() {
     cv::destroyAllWindows();
     return 0;
 }
+
 
 
 
