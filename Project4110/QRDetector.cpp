@@ -82,12 +82,18 @@ string QRDetector::detect(const Mat& frame) {
                 QRCodeDetector qrDecoder;
                 
                 if (!upscaled.empty() && upscaled.cols > 0 && upscaled.rows > 0) {
-                    string data = qrDecoder.detectAndDecode(upscaled);
-                    if (!data.empty()) {
-                        cout << "Found\n";
-                        imshow("QR Cropped", cropped);
-                        return data;
+                    try {
+                        string data = qrDecoder.detectAndDecode(upscaled);                    
+                        if (!data.empty()) {
+                            cout << "At node      : " << data << endl; // For Debug Nodes
+                            //imshow("QR Cropped", cropped);
+                            return data;
+                        }
                     }
+                    catch (exception e) {
+                        return "";
+                    };
+
                 }
             }
         }

@@ -22,7 +22,7 @@ Mat largeWin, win[imgPerCol * imgPerRow],
     legend[imgPerCol * imgPerRow];
 
 int main() {
-    VideoCapture cap(0);    // 0 (Default camera), >= 1 (other input)
+    VideoCapture cap(1);    // 0 (Default camera), >= 1 (other input)
     if (!cap.isOpened()) {
         cerr << "Camera not accessible.\n";
         return -1;
@@ -37,6 +37,8 @@ int main() {
     GridRouteReader reader;
 
     string destNode;
+    string destination;
+    bool isNavigating = 0;
 
     reader.gridLoader("NavigationFile\\RouteGrid.txt");
     narrate.speak("System initialized.");
@@ -72,21 +74,27 @@ int main() {
             // initialize the navigation starting point.
             // BACKUP Code: if (!tripManager.hasPath() || destNode == "") {
             if (destNode == "") {
-                cout << "Loc data: " << locationID << endl; // For Debug Nodes 
-                string destination = uiManager.selectDestination(locationID);
+                if (isNavigating) { // If previously is navigating, and now no more node = destination reached
+                    narrate.speak("Arrived at " + destination);
+                    isNavigating = 0;
+                }
+                
+                cout << "\nStart node   : " << locationID << endl; // For Debug Nodes 
+                destination = uiManager.selectDestination(locationID);
                 if (destination != "") {
                     // Set up navigation route
                     auto path = navigator.findPath(locationID, destination); 
-                    tripManager.setPath(path); 
-
+                    tripManager.setPath(path);
+                    isNavigating = 1;
+                    cout << "End node     : " << destination << endl; // For Debug Nodes
                     narrate.speak("Walk towards " + destination);
                 }
             }
 
         }
 
-        resize(largeWin, largeWin, cv::Size(1300, 270));
-        imshow("Process", largeWin);   // Show Process 
+        resize(largeWin, largeWin, cv::Size(1400, 320));
+        imshow("Image Processing", largeWin);   // Show Process 
         if (waitKey(1) == 'x') {
             locationID = "";
             destNode = "";
