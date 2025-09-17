@@ -2,13 +2,20 @@
 
 #include <string>
 #include <vector>
-
-using namespace std;
+#include "Graph.h" // Include the Graph definition
 
 class GridRouteReader {
 public:
-    vector<string> gridLoader(const string& filename);
+    GridRouteReader(); // Add a constructor
+    bool gridLoader(const std::string& filename); // Changed to bool for success/failure
 
+    const Graph& getGraph() const; // Getter for the graph
+    int getGridWidth() const;      // Getter for the grid width
+
+    // Inside public section of GridRouteReader class
+    const std::vector<std::string>& getGrid() const;
 private:
-    vector<string> grid;
+    std::vector<std::string> grid;
+    Graph graph; // The graph representation of the grid
+    int gridWidth; // To help convert coordinates to index
 };

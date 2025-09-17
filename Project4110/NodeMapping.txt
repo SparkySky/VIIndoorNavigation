@@ -1,0 +1,7 @@
+# This file maps QR code position to grid coordinates as in RouteGrid.txt.
+# Columns: Node Row Column
+
+N001 1 2
+N002 1 9
+N011 9 10
+N012 10 4

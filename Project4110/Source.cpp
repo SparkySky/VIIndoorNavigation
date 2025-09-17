@@ -12,6 +12,7 @@
 #include "Text2Speech.h"
 #include "UIForVI.h"
 #include "GridRouteReader.h"
+#include "MapVisualizer.h"
 
 using namespace std;
 using namespace cv;
@@ -34,16 +35,37 @@ int main() {
     Navigator navigator;
     Text2Speech narrate;
     UIForVI uiManager;
-    GridRouteReader reader;
+    GridRouteReader reader; // This object reads the grid and creates the graph
 
     string destNode;
     string destination;
-    bool isNavigating = 0;
+    bool isNavigating = false;
 
-    reader.gridLoader("NavigationFile\\RouteGrid.txt");
+    try {
+        reader.gridLoader("RouteGrid.txt");
+    }
+    catch (Exception e) {
+        narrate.speak("Error reading RouteGrid.txt");
+    }
+
+    try {
+        navigator.loadNodeMap("NodeMapping.txt", reader.getGridWidth());;
+    }
+    catch (Exception e) {
+        narrate.speak("Error reading NodeMapping.txt");
+    }
+
+    MapVisualizer mapViz(reader.getGrid(), navigator.getNodeCoordinates());
+    vector<int> currentIntPath;
+    string startNode = "";
+    int frameCount = 0;
+    string lastLocationID = "";
+
     narrate.speak("System initialized.");
 
     while (true) {
+        frameCount++;
+
         Mat frame;
         cap >> frame;
         if (frame.empty()) continue;
@@ -56,55 +78,116 @@ int main() {
         putText(legend[3], "Segmentation", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
         frame.copyTo(win[0]);
 
-        // Retrieving LocationID from QR Code using component developed by
-        // Khor Jia En (Color Processing) and Yee Wen Xian (QR Detection)
-        string locationID = qrDetector.detect(frame); 
-
-        /* Default OpenCV QR Scanner */
-        // QRCodeDetector qrDecoder;
-        // string locationID = qrDecoder.detectAndDecode(frame);
+        string locationID = qrDetector.detect(frame);
 
         if (!locationID.empty()) {
-            tripManager.updateLocation(locationID); // Constantly localizing user
-            narrate.speak("You're at " + locationID);
+            // Only act if the location is new
+            if (locationID != lastLocationID) {
+                lastLocationID = locationID; // Update last seen location immediately
+                narrate.speak("You're at " + locationID);
 
-            destNode = tripManager.getNextNode(); // Get next node in generated path
+                if (isNavigating) {
+                    // --- NAVIGATION IN PROGRESS ---
 
-            // If path/node not exist before, the QR scanned will be used to 
-            // initialize the navigation starting point.
-            // BACKUP Code: if (!tripManager.hasPath() || destNode == "") {
-            if (destNode == "") {
-                if (isNavigating) { // If previously is navigating, and now no more node = destination reached
-                    narrate.speak("Arrived at " + destination);
-                    isNavigating = 0;
+                    // 1. Check if we are ON the planned path
+                    if (tripManager.isLocationOnPath(locationID)) {
+                        tripManager.updateLocation(locationID);
+
+                        // Check for arrival right after updating
+                        if (tripManager.isPathEmpty()) {
+                            narrate.speak("Arrived at " + destination);
+                            isNavigating = false;
+                            destination = "";
+                            currentIntPath.clear();
+                            lastLocationID = ""; // <<< ADD THIS LINE TO RESET THE STATE
+                        }
+                    }
+                    // 2. If we are OFF the planned path, trigger a reroute
+                    else {
+                        narrate.speak("Off course. Rerouting from " + locationID);
+                        cout << "Rerouting from " << locationID << " to " << destination << endl;
+
+                        currentIntPath = navigator.findPath(locationID, destination, reader.getGraph(), reader.getGridWidth());
+
+                        if (!currentIntPath.empty()) {
+                            auto stringPath = navigator.convertPathToStrings(currentIntPath, reader.getGridWidth());
+                            tripManager.setPath(stringPath);
+                            tripManager.updateLocation(locationID); // Update with the new path
+
+                            string nextNode = tripManager.getNextNode();
+                            if (!nextNode.empty()) {
+                                narrate.speak("Reroute successful. Next stop is " + nextNode);
+                            }
+                            else {
+                                narrate.speak("Reroute successful. Proceed to " + destination);
+                            }
+                        }
+                        else {
+                            narrate.speak("Sorry, I could not find a new path from here.");
+                            isNavigating = false;
+                            destination = "";
+                            currentIntPath.clear();
+                        }
+                    }
                 }
-                
-                cout << "\nStart node   : " << locationID << endl; // For Debug Nodes 
-                destination = uiManager.selectDestination(locationID);
-                if (destination != "") {
-                    // Set up navigation route
-                    auto path = navigator.findPath(locationID, destination); 
-                    tripManager.setPath(path);
-                    isNavigating = 1;
-                    cout << "End node     : " << destination << endl; // For Debug Nodes
-                    narrate.speak("Walk towards " + destination);
+                else {
+                    // --- START A NEW TRIP ---
+                    startNode = locationID;
+                    cout << "\nStart node   : " << locationID << endl;
+                    destination = uiManager.selectDestination(locationID);
+
+                    if (destination != "" && destination != "Cancel") {
+                        currentIntPath = navigator.findPath(locationID, destination, reader.getGraph(), reader.getGridWidth());
+
+                        if (!currentIntPath.empty()) {
+                            auto stringPath = navigator.convertPathToStrings(currentIntPath, reader.getGridWidth());
+                            tripManager.setPath(stringPath);
+                            tripManager.updateLocation(locationID);
+
+                            isNavigating = true;
+                            cout << "End node     : " << destination << endl;
+
+                            string nextNode = tripManager.getNextNode();
+                            if (!nextNode.empty()) {
+                                narrate.speak("Navigating to " + destination + ". Next stop is " + nextNode);
+                            }
+                            else {
+                                narrate.speak("Navigating to " + destination);
+                            }
+                            startNode = "";
+                        }
+                        else {
+                            narrate.speak("Sorry, I could not find a path to " + destination);
+                            startNode = "";
+                        }
+                    }
                 }
             }
-
         }
 
         resize(largeWin, largeWin, cv::Size(1400, 320));
-        imshow("Image Processing", largeWin);   // Show Process 
-        if (waitKey(1) == 'x') {
-            locationID = "";
-            destNode = "";
-            tripManager.setPath(vector<string> {});
+        imshow("Image Processing", largeWin);
+
+        bool blinkState = (frameCount / 20) % 2 == 1; // Blink every 20 frames
+        Mat mapView = mapViz.drawMap(tripManager.getCurrentLocation(), destination, currentIntPath, reader.getGridWidth(), startNode, blinkState);
+        if (!mapView.empty()) {
+            imshow("Navigation Map", mapView);
+        }
+
+        int key = waitKey(1);
+
+        // If ANY key is pressed (waitKey returns something other than -1),
+        // stop the current narration.
+        if (key != -1) {
+            narrate.stop();
+        }
+        if (key == 'x') {
+            tripManager.setPath(vector<string>{});
+            isNavigating = false;
+            startNode = "";
+            currentIntPath.clear();
             narrate.speak("Navigation cancelled");
         }
-        if (waitKey(1) == 'q') break;
+        if (key == 'q') break;
     }
-
-    cap.release();
-    destroyAllWindows();
-    return 0;
 }
