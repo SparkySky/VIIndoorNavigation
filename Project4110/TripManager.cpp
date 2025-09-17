@@ -25,7 +25,3 @@ string TripManager::getNextNode() {
         return path[pathIndex];
     return "";
 }
-
-//bool TripManager::hasPath() const {
-//    return !path.empty();
-//}
