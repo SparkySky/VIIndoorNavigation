@@ -1,5 +1,6 @@
 #include <queue>
 #include <fstream>
+#include <sstream>   // For parsing strings
 #include <iostream>
 
 #include "Navigator.h"
@@ -8,70 +9,70 @@
 
 using namespace std;
 
-using json = nlohmann::json;
 
-vector<string> GridRouteReader::gridLoader(const string& filename) {
-    grid.clear();
-    ifstream file(filename);
+Navigator::Navigator() {}
 
+bool Navigator::loadNodeMap(const std::string& filename, int gridWidth) {
+    std::ifstream file(filename);
     if (!file.is_open()) {
-        cerr << "Error opening file: " << filename << endl;
-        return {};
+        std::cerr << "Error: Could not open node mapping file: " << filename << std::endl;
+        return false;
     }
 
-    string line;
-    while (getline(file, line)) {
-        grid.push_back(line);
-    }
+    std::string line;
 
-    file.close();
-    return grid;
-}
+    while (std::getline(file, line)) {
+        // Skip comments and empty lines
+        if (line.empty() || line[0] == '#') {
+            continue;
+        }
 
+        std::stringstream ss(line);
+        std::string nodeName;
+        int row, col;
 
-//djikstra
-void Navigator::loadMap(const string& filename) {
-    ifstream file(filename);
-    json j;
-    file >> j;
-    for (auto& node : j.items()) {
-        string id = node.key();
-        for (auto& neighbor : node.value()) {
-            graph[id].emplace_back(neighbor["id"], neighbor["cost"]);
+        if (ss >> nodeName >> row >> col) {
+            nodeCoordinates[nodeName] = cv::Point(col, row);
+            int index = row * gridWidth + col; // Now uses the correct width
+            indexToNodeName[index] = nodeName;
         }
     }
+    std::cout << "Node map loaded successfully." << std::endl;
 }
 
-vector<string> Navigator::findPath(const string& start, const string& end) {
-    unordered_map<string, int> dist;
-    unordered_map<string, string> prev;
-    priority_queue<pair<int, string>> pq;
-
-    dist[start] = 0;
-    pq.push({ 0, start });
-
-
-    while (!pq.empty()) {
-        auto [cost, node] = pq.top(); pq.pop();
-        cost = -cost;
-
-        if (node == end) break;
-
-        for (auto& [neighbor, weight] : graph[node]) {
-            int newCost = cost + weight;
-            if (!dist.count(neighbor) || newCost < dist[neighbor]) {
-                dist[neighbor] = newCost;
-                prev[neighbor] = node;
-                pq.push({ -newCost, neighbor });
+std::vector<std::string> Navigator::convertPathToStrings(const std::vector<int>& path, int gridWidth) {
+    std::vector<std::string> stringPath;
+    for (int index : path) {
+        // Find if this index corresponds to a named node
+        if (indexToNodeName.count(index)) {
+            // Only add named nodes to the final path instructions
+            if (stringPath.empty() || stringPath.back() != indexToNodeName[index]) {
+                stringPath.push_back(indexToNodeName[index]);
             }
         }
     }
+    return stringPath;
+}
 
-    vector<string> path;
-    for (string at = end; at != ""; at = prev[at]) {
-        path.push_back(at);
-        if (at == start) break;
+std::vector<int> Navigator::findPath(const std::string& startNodeName, const std::string& endNodeName, const Graph& graph, int gridWidth) {
+    if (nodeCoordinates.find(startNodeName) == nodeCoordinates.end() ||
+        nodeCoordinates.find(endNodeName) == nodeCoordinates.end()) {
+        std::cerr << "Error: Start or end node name not found in map." << std::endl;
+        return {};
     }
-    reverse(path.begin(), path.end());
-    return path;
+
+    cv::Point startPoint = nodeCoordinates[startNodeName];
+    cv::Point endPoint = nodeCoordinates[endNodeName];
+
+    int startIndex = startPoint.y * gridWidth + startPoint.x;
+    int endIndex = endPoint.y * gridWidth + endPoint.x;
+
+    std::cout << "Finding path from " << startNodeName << " (" << startIndex << ") to "
+        << endNodeName << " (" << endIndex << ")" << std::endl;
+
+    return graph.dijkstra(startIndex, endIndex);
+}
+
+const std::map<std::string, cv::Point>& Navigator::getNodeCoordinates() const {
+    return nodeCoordinates;
 }

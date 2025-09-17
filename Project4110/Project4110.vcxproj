@@ -133,7 +133,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="route.cpp" />
+    <ClCompile Include="Graph.cpp" />
+    <ClCompile Include="GridRouteReader.cpp" />
+    <ClCompile Include="MapVisualizer.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="QRDetector.cpp" />
     <ClCompile Include="Navigator.cpp" />
@@ -145,6 +147,7 @@
   <ItemGroup>
     <ClInclude Include="Graph.h" />
     <ClInclude Include="GridRouteReader.h" />
+    <ClInclude Include="MapVisualizer.h" />
     <ClInclude Include="Navigator.h" />
     <ClInclude Include="nlohmann\json.hpp" />
     <ClInclude Include="QRDetector.h" />
@@ -152,6 +155,10 @@
     <ClInclude Include="Text2Speech.h" />
     <ClInclude Include="TripManager.h" />
     <ClInclude Include="UIForVI.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="NodeMapping.txt" />
+    <Text Include="RouteGrid.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

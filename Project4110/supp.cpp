@@ -1,5 +1,7 @@
 #include	"Supp.h"  
 
+using namespace std;
+using namespace cv;
 // The function below helps to create a larger window with A X B sub-windows.
 // For example, 3X4 sub-windows.  A and B are determined by the input parameters of 
 // noOfImagePerCol and noOfImagePerRow respectively. The first input srcI is the
