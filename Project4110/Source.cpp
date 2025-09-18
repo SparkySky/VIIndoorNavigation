@@ -33,7 +33,7 @@ void onMouseClick(int event, int x, int y, int flags, void* userdata) {
             int gridX = x / cellSize;
             int gridY = y / cellSize;
             // Print in the correct format for NodeMapping.txt
-            std::cout << "NODE [NAME] " << gridY << " " << gridX << std::endl;
+            std::cout << "Coordinate " << gridY << " " << gridX << std::endl;
         }
     }
 }
