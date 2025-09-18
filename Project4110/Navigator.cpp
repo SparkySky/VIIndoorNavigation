@@ -35,7 +35,9 @@ bool Navigator::loadNodeMap(const std::string& filename, int gridWidth) {
             nodeCoordinates[nodeName] = cv::Point(col, row);
             int index = row * gridWidth + col; // Now uses the correct width
             indexToNodeName[index] = nodeName;
+            
         }
+        cout << nodeName << " " << row << " " << col << endl;
     }
     std::cout << "Node map loaded successfully." << std::endl;
 }
