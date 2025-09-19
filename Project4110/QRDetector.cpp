@@ -11,6 +11,7 @@
 using namespace cv;
 using namespace std;
 
+boolean justLaunch = 1;
 QRDetector::QRDetector() {}
 extern Mat win[];
 
@@ -36,7 +37,12 @@ cv::Rect QRDetector::detect(cv::Mat& frame, std::string& decodedData) {
     cv::Rect bbox = cv::boundingRect(points);
 
     cv::QRCodeDetector qrDecoder;
-    decodedData = qrDecoder.detectAndDecode(frame);
+    try {
+        decodedData = qrDecoder.detectAndDecode(frame);
+    }
+    catch (Exception e) {
+        cout << "Unable to decode QR\n";
+    }
 
     return bbox;
 }
@@ -56,6 +62,8 @@ cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
     static std::vector<std::string> detectionResults;
     static std::string currentBestResult = "No detection yet...";
     static int currentBestCount = 0;
+    static std::string confirmedResultToSpeak = ""; // The result we have already announced
+    static int stableFrameCount = 0;
 
     int screenWidth = frame.cols;
     cv::Mat lab, mask, bgr, outputFrame = frame.clone();
@@ -191,13 +199,32 @@ cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
             }
         }
 
+        const int kStabilityThreshold = 15; // Require 15 stable frames before speaking (about 0.5s)
+
+        // Check if the best result has changed from the previous frame
+        if (bestResult == previousBestResult) {
+            stableFrameCount++; // If it's the same, it's more stable
+        }
+        else {
+            stableFrameCount = 0; // If it changed, reset the stability counter
+        }
+
         // Check if best result changed and trigger TTS
-        if (kEnableTts && bestResult != previousBestResult && bestResult != "Low confidence") {
+        if (kEnableTts &&
+            bestResult != "Low confidence" &&
+            stableFrameCount > kStabilityThreshold &&
+            bestResult != confirmedResultToSpeak)
+        {
             std::string guidanceMessage;
 
             // Create speech-friendly text
             if (bestResult.find("No valid red regions") != std::string::npos) {
-                guidanceMessage = "No QR code detected. Please move around or adjust your camera.";
+                if (justLaunch) {
+                    justLaunch = 0;
+                }
+                else {
+                    guidanceMessage = "Potential QR no longer detected";
+                }
             }
             else if (bestResult.find("Detected:") != std::string::npos) {
                 // Example: "Detected: Left (1), Center (2), Right (1)"
@@ -215,14 +242,17 @@ cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
                     std::string part = parts[i];
                     std::string messagePart;
 
+                    bool centerOnly = 1;
                     if (part.find("Left") != std::string::npos) {
                         messagePart = "on the left";
+                        centerOnly = 0;
                     }
                     else if (part.find("Center") != std::string::npos) {
                         messagePart = "in the center";
                     }
                     else if (part.find("Right") != std::string::npos) {
                         messagePart = "on the right";
+                        centerOnly = 0;
                     }
 
                     // Extract number inside ()
@@ -234,21 +264,21 @@ cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
                     }
 
                     combined += number + " QR code" + (number == "1" ? "" : "s") + " " + messagePart;
-
                     if (i < parts.size() - 1) {
                         combined += " and ";
                     }
+                    if (centerOnly)
+                        combined += ". Please move forward.";
                 }
 
-                guidanceMessage = "Potential QR codes detected: " + combined +
-                    ". Please move closer and adjust your camera to scan.";
+                guidanceMessage = "Potential " + combined;
             }
 
             // Use Text2Speech library
-            narrate.speak(guidanceMessage);
+            narrate.speak_low_priority(guidanceMessage);
             std::cout << guidanceMessage << std::endl;
+            confirmedResultToSpeak = bestResult;
         }
-
         currentBestResult = bestResult;
         currentBestCount = maxCount;
     }

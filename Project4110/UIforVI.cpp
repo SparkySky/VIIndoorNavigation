@@ -16,7 +16,7 @@ UIForVI::UIForVI() {
 
 string UIForVI::selectDestination(string curLocation) {
     curIndex = 0; // Reset to 'Cancel'
-    narrate.speak("Select Destination");
+    narrate.speak_low_priority("Select Destination");
 
     // Function below is needed if first destinations is a real place. Else no need
     //if (destinations[curIndex] == curLocation) // Pre check if simillar location and dest
@@ -38,10 +38,10 @@ string UIForVI::selectDestination(string curLocation) {
         }
         else if (input == 'c') {
             if (curIndex == 0) {
-                narrate.speak("Navigation Cancelled");
+                narrate.speak_low_priority("Navigation Cancelled");
                 return "";
             }
-            narrate.speak("Destination selected: " + destinations[curIndex]);
+            narrate.speak_low_priority("Destination selected: " + destinations[curIndex]);
             return destinations[curIndex];
         }
         narrateCurrentOption();
@@ -51,7 +51,7 @@ string UIForVI::selectDestination(string curLocation) {
 /*Helper*/
 // Narrate current option
 void UIForVI::narrateCurrentOption() {
-    narrate.speak("Option: " + destinations[curIndex]);
+    narrate.speak_low_priority("Option: " + destinations[curIndex]);
 }
 
 // Get user input
