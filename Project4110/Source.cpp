@@ -19,10 +19,40 @@ using namespace std;
 using namespace cv;
 using namespace std::chrono;
 
+// Define wall detection state
+enum WallState { NONE, LEFT_WALL, RIGHT_WALL };
+static WallState lastWallState = NONE;
+
+// Simple left/right wall risk estimator using edge density
+static pair<double, double> estimateSideEdgeDensity(const Mat& frame) {
+    if (frame.empty()) return { 0.0, 0.0 };
+    Mat gray, blurred, edges;
+    cvtColor(frame, gray, COLOR_BGR2GRAY);
+    GaussianBlur(gray, blurred, Size(5, 5), 1.2);
+    Canny(blurred, edges, 50, 150);
+
+    int w = edges.cols;
+    int h = edges.rows;
+    if (w == 0 || h == 0) return { 0.0, 0.0 };
+
+    // Use outer 30% bands on each side instead of full halves
+    int sideWidth = max(1, (int)std::round(w * 0.30));
+    Rect leftRoi(0, 0, sideWidth, h);
+    Rect rightRoi(w - sideWidth, 0, sideWidth, h);
+    Mat left = edges(leftRoi);
+    Mat right = edges(rightRoi);
+
+    double leftCount = countNonZero(left);
+    double rightCount = countNonZero(right);
+    double leftDensity = leftCount / (left.total());
+    double rightDensity = rightCount / (right.total());
+    return { leftDensity, rightDensity };
+}
+
 // Partition Config
 int const imgPerCol = 1, imgPerRow = 4;
 Mat largeWin, win[imgPerCol * imgPerRow],
-    legend[imgPerCol * imgPerRow];
+legend[imgPerCol * imgPerRow];
 
 void onMouseClick(int event, int x, int y, int flags, void* userdata) {
     if (event == cv::EVENT_LBUTTONDOWN) {
@@ -39,7 +69,7 @@ void onMouseClick(int event, int x, int y, int flags, void* userdata) {
 }
 
 int main() {
-    VideoCapture cap(1);    // 0 (Default camera), >= 1 (other input)
+    VideoCapture cap(0);    // 0 (Default camera), >= 1 (other input)
     if (!cap.isOpened()) {
         cerr << "Camera not accessible.\n";
         return -1;
@@ -57,6 +87,7 @@ int main() {
     string destination;
     bool isNavigating = false;
     auto lastFeedbackTime = high_resolution_clock::now();
+    auto lastWallWarnTime = high_resolution_clock::now();
 
     try {
         reader.gridLoader("NavigationFile\\RouteGrid.txt");
@@ -105,6 +136,87 @@ int main() {
 
         string locationID;
         cv::Rect redBox = qrDetector.detect(frame, locationID);
+
+        // Wall detection (run regardless of QR)
+        auto now = high_resolution_clock::now();
+        duration<double> since = duration_cast<duration<double>>(now - lastWallWarnTime);
+
+        // Check every 2 seconds to avoid overly frequent feedback
+        if (since.count() > 2.0) {
+            auto densities = estimateSideEdgeDensity(frame);
+            double leftD = densities.first;
+            double rightD = densities.second;
+
+            // Thresholds (tunable)
+            double minDensityForWall = 0.02;   // Minimum edge density to consider a wall
+            double triggerImbalance = 0.02;   // Trigger threshold (stricter)
+            double releaseImbalance = 0.01;   // Release threshold (looser, for hysteresis)
+
+            // Debug info
+            char buf[128];
+            snprintf(buf, sizeof(buf), "Wall L: %.3f  R: %.3f  dR-dL: %.3f",
+                leftD, rightD, rightD - leftD);
+            putText(legend[3], buf, Point(5, 26), 1, 1, Scalar(50, 200, 50), 1);
+            cout << buf << endl;
+
+            // show real-time visualization
+            Mat gray, blurred, edges;
+            cvtColor(frame, gray, COLOR_BGR2GRAY);
+            GaussianBlur(gray, blurred, Size(5, 5), 1.2);
+            Canny(blurred, edges, 50, 150);
+
+            int w = edges.cols;
+            int h = edges.rows;
+            int sideWidth = max(1, (int)std::round(w * 0.30));
+
+            // Left/Right ROI
+            Rect leftRoi(0, 0, sideWidth, h);
+            Rect rightRoi(w - sideWidth, 0, sideWidth, h);
+            Mat leftEdge = edges(leftRoi).clone();
+            Mat rightEdge = edges(rightRoi).clone();
+
+            // Make visualization window
+            cv::resize(leftEdge, leftEdge, cv::Size(200, 200));
+            cv::resize(rightEdge, rightEdge, cv::Size(200, 200));
+
+            Mat wallVis;
+            hconcat(leftEdge, rightEdge, wallVis);
+            cv::cvtColor(wallVis, wallVis, cv::COLOR_GRAY2BGR);
+
+            putText(wallVis, "LEFT ROI", Point(20, 20), 1, 1, Scalar(0, 255, 0), 1);
+            putText(wallVis, "RIGHT ROI", Point(220, 20), 1, 1, Scalar(0, 255, 0), 1);
+
+            imshow("Wall Detection View", wallVis);
+
+            // Decision logic (with hysteresis)
+            if (rightD > minDensityForWall && (rightD - leftD) > triggerImbalance) {
+                if (lastWallState != RIGHT_WALL) {
+                    narrate.speak("Shift left a bit");
+                    cout << "WARNING: Right wall detected!" << endl;
+                    putText(frame, ">> RIGHT WALL <<", Point(50, 50), 2, 2, Scalar(0, 0, 255), 3);
+                    lastWallState = RIGHT_WALL;
+                    lastWallWarnTime = now;
+                }
+            }
+            else if (leftD > minDensityForWall && (leftD - rightD) > triggerImbalance) {
+                if (lastWallState != LEFT_WALL) {
+                    narrate.speak("Shift right a bit");
+                    cout << "WARNING: Left wall detected!" << endl;
+                    putText(frame, "<< LEFT WALL >>", Point(frame.cols - 350, 50), 2, 2, Scalar(0, 0, 255), 3);
+                    lastWallState = LEFT_WALL;
+                    lastWallWarnTime = now;
+                }
+            }
+            else {
+                // When wall condition disappears (with hysteresis margin), reset state to NONE
+                if (lastWallState == LEFT_WALL && (leftD - rightD) < releaseImbalance) {
+                    lastWallState = NONE;
+                }
+                else if (lastWallState == RIGHT_WALL && (rightD - leftD) < releaseImbalance) {
+                    lastWallState = NONE;
+                }
+            }
+        }
 
         if (!locationID.empty()) {
             // Only act if the location is new
