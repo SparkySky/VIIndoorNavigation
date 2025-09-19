@@ -45,10 +45,16 @@
     <ClCompile Include="UIForVI.cpp">
       <Filter>Source Files\modules</Filter>
     </ClCompile>
-    <ClCompile Include="route.cpp">
-      <Filter>Source Files\handling\utils</Filter>
-    </ClCompile>
     <ClCompile Include="supp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GridRouteReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MapVisualizer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -80,5 +86,12 @@
     <ClInclude Include="GridRouteReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MapVisualizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="NodeMapping.txt" />
+    <Text Include="RouteGrid.txt" />
   </ItemGroup>
 </Project>

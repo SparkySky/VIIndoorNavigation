@@ -64,14 +64,16 @@ int main() {
         reader.gridLoader("NavigationFile\\RouteGrid.txt");
     }
     catch (Exception e) {
-        narrate.speak("Error reading RouteGrid.txt");
+        narrate.speak_high_priority("Error reading RouteGrid.txt");
+        return 1;
     }
 
     try {
         navigator.loadNodeMap("NavigationFile\\NodeMapping.txt", reader.getGridWidth());;
     }
     catch (Exception e) {
-        narrate.speak("Error reading NodeMapping.txt");
+        narrate.speak_high_priority("Error reading NodeMapping.txt");
+        return 1;
     }
 
     MapVisualizer mapViz(reader.getGrid(), navigator.getNodeCoordinates());
@@ -91,9 +93,10 @@ int main() {
     cv::namedWindow(windowName);
     cv::createTrackbar("Min Area", windowName, &qrDetector.minAreaTrackbar, 20000);
 
-    narrate.speak("System initialized");
+    narrate.speak_low_priority("System initialized");
     while (true) {
         frameCount++;
+        narrate.update_status();
 
         Mat frame;
         cap >> frame;
@@ -114,7 +117,7 @@ int main() {
             // Only act if the location is new
             if (locationID != lastLocationID) {
                 lastLocationID = locationID; // Update last seen location immediately
-                narrate.speak("You're at " + locationID);
+                narrate.speak_high_priority("You're at " + locationID);
 
                 if (isNavigating) {
                     // --- NAVIGATION IN PROGRESS ---
@@ -125,7 +128,7 @@ int main() {
 
                         // Check for arrival right after updating
                         if (tripManager.isPathEmpty()) {
-                            narrate.speak("Arrived at " + destination);
+                            narrate.speak_high_priority("Arrived at " + destination);
                             isNavigating = false;
                             destination = "";
                             currentIntPath.clear();
@@ -134,7 +137,7 @@ int main() {
                     }
                     // 2. If we are OFF the planned path, trigger a reroute
                     else {
-                        narrate.speak("Rerouting from " + locationID);
+                        narrate.speak_low_priority("Rerouting from " + locationID);
                         cout << "Rerouting from " << locationID << " to " << destination << endl;
 
                         currentIntPath = navigator.findPath(locationID, destination, reader.getGraph(), reader.getGridWidth());
@@ -146,14 +149,14 @@ int main() {
 
                             string nextNode = tripManager.getNextNode();
                             if (!nextNode.empty()) {
-                                narrate.speak("Reroute successful. Next stop is " + nextNode);
+                                narrate.speak_low_priority("Rerouted. Next stop is " + nextNode);
                             }
                             else {
-                                narrate.speak("Reroute successful. Proceed to destination" + destination);
+                                narrate.speak_low_priority("Rerouted. Proceed to destination" + destination);
                             }
                         }
                         else {
-                            narrate.speak("Sorry, I could not find a new path from here.");
+                            narrate.speak_high_priority("Sorry, I could not find a new path from here.");
                             isNavigating = false;
                             destination = "";
                             currentIntPath.clear();
@@ -161,7 +164,7 @@ int main() {
                     }
                 }
                 else {
-                    // --- START A NEW TRIP ---
+                    // START A NEW TRIP
                     startNode = locationID;
                     cout << "\nStart node   : " << locationID << endl;
                     destination = uiManager.selectDestination(locationID);
@@ -179,15 +182,15 @@ int main() {
 
                             string nextNode = tripManager.getNextNode();
                             if (!nextNode.empty()) {
-                                narrate.speak("Navigating to " + destination + ". Next stop is " + nextNode);
+                                narrate.speak_low_priority("Navigating to " + destination + ". Next stop is " + nextNode);
                             }
                             else {
-                                narrate.speak("Navigating to " + destination);
+                                narrate.speak_low_priority("Navigating to destination " + destination);
                             }
                             startNode = "";
                         }
                         else {
-                            narrate.speak("Sorry, I could not find a path to " + destination);
+                            narrate.speak_high_priority("Sorry, I could not find a path to " + destination);
                             startNode = "";
                         }
                     }
@@ -209,11 +212,11 @@ int main() {
                     int tolerance = frame.cols / 10; // e.g., 10% of the frame width
 
                     if (red_box_center_x < frame_center_x - tolerance) {
-                        narrate.speak("Turn slightly left");
+                        narrate.speak_low_priority("slide left");
                         lastFeedbackTime = now;
                     }
                     else if (red_box_center_x > frame_center_x + tolerance) {
-                        narrate.speak("Turn slightly right");
+                        narrate.speak_low_priority("slide right");
                         lastFeedbackTime = now;
                     }
 
@@ -224,11 +227,11 @@ int main() {
 
                     // These thresholds may need tuning based on your camera and environment
                     if (area_ratio > 0.15) { // If the red area takes up > 15% of the view
-                        narrate.speak("You are too close to the wall");
+                        narrate.speak_low_priority("You are too close to the wall");
                         lastFeedbackTime = now;
                     }
                     else if (area_ratio < 0.01) { // If the red area takes up < 1% of the view
-                        narrate.speak("You are too far from the wall");
+                        narrate.speak_low_priority("You are too far from the wall");
                         lastFeedbackTime = now;
                     }
                 }
@@ -257,7 +260,7 @@ int main() {
             isNavigating = false;
             startNode = "";
             currentIntPath.clear();
-            narrate.speak("Navigation cancelled");
+            narrate.speak_low_priority("Navigation cancelled");
         }
         if (key == 'q') break;
     }
