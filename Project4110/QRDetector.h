@@ -5,10 +5,13 @@
 
 class QRDetector {
 public:
+    QRDetector();
+    cv::Rect detect(cv::Mat&, std::string&);
     std::string detect(const cv::Mat& frame);
     cv::Mat cropped;
     cv::Mat upscaled;
 private:
+    cv::Mat grayscale, thresold;
     cv::Mat extractRedRegion(const cv::Mat& frame);
     Text2Speech narrate;
 };

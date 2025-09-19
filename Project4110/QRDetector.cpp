@@ -2,13 +2,37 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/objdetect.hpp>
+#include <algorithm>
 
 #include "QRDetector.h"
 
 using namespace cv;
 using namespace std;
 
+QRDetector::QRDetector() {}
 extern Mat win[];
+
+cv::Rect QRDetector::detect(cv::Mat& frame, std::string& decodedData) {
+    cv::Mat redRegion = extractRedRegion(frame);
+    if (redRegion.empty()) {
+        return cv::Rect();
+    }
+
+    std::vector<cv::Point> points;
+    cv::findNonZero(redRegion, points);
+
+    if (points.empty()) {
+        return cv::Rect();
+    }
+
+    cv::Rect bbox = cv::boundingRect(points);
+
+    cv::QRCodeDetector qrDecoder;
+    decodedData = qrDecoder.detectAndDecode(frame);
+
+    return bbox;
+}
+
 
 cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
     // Configure batch size here - change this value as needed

@@ -8,8 +8,8 @@
 
 class MapVisualizer {
 public:
-    MapVisualizer(const std::vector<std::string>& grid, const std::map<std::string, cv::Point>& nodeCoords, int cellSize = 40);
-
+    MapVisualizer(const std::vector<std::string>& grid, const std::map<std::string, cv::Point>& nodeCoords);
+    int cellSize;
     cv::Mat drawMap(
         const std::string& currentPosNode,
         const std::string& destNode,
@@ -22,7 +22,6 @@ public:
 private:
     cv::Mat mapBase;
     std::map<std::string, cv::Point> nodeCoordinates;
-    int cellSize;
     int gridRows;
     int gridCols;
 };
