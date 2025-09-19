@@ -1,7 +1,6 @@
 #include <iostream>
 #include <opencv2/core/core.hpp> // Core functions
 #include <opencv2/highgui/highgui.hpp> // GUI functions
-#include <chrono>
 
 // Partitioning
 #include "Supp.h"
@@ -17,26 +16,11 @@
 
 using namespace std;
 using namespace cv;
-using namespace std::chrono;
 
 // Partition Config
 int const imgPerCol = 1, imgPerRow = 4;
 Mat largeWin, win[imgPerCol * imgPerRow],
     legend[imgPerCol * imgPerRow];
-
-void onMouseClick(int event, int x, int y, int flags, void* userdata) {
-    if (event == cv::EVENT_LBUTTONDOWN) {
-        // Cast the userdata pointer back to an int pointer to get the cellSize
-        int cellSize = *(static_cast<int*>(userdata));
-
-        if (cellSize > 0) {
-            int gridX = x / cellSize;
-            int gridY = y / cellSize;
-            // Print in the correct format for NodeMapping.txt
-            std::cout << "Coordinate " << gridY << " " << gridX << std::endl;
-        }
-    }
-}
 
 int main() {
     VideoCapture cap(1);    // 0 (Default camera), >= 1 (other input)
@@ -56,17 +40,16 @@ int main() {
     string destNode;
     string destination;
     bool isNavigating = false;
-    auto lastFeedbackTime = high_resolution_clock::now();
 
     try {
-        reader.gridLoader("NavigationFile\\RouteGrid.txt");
+        reader.gridLoader("RouteGrid.txt");
     }
     catch (Exception e) {
         narrate.speak("Error reading RouteGrid.txt");
     }
 
     try {
-        navigator.loadNodeMap("NavigationFile\\NodeMapping.txt", reader.getGridWidth());;
+        navigator.loadNodeMap("NodeMapping.txt", reader.getGridWidth());;
     }
     catch (Exception e) {
         narrate.speak("Error reading NodeMapping.txt");
@@ -77,14 +60,6 @@ int main() {
     string startNode = "";
     int frameCount = 0;
     string lastLocationID = "";
-
-    // --- Add these lines for the mapping tool ---
-    const std::string mapWindowName = "Navigation Map";
-    cv::namedWindow(mapWindowName); // Create a named window
-
-    // This is the key line to connect the mouse click to your function
-    // We pass the cellSize from the visualizer to the callback
-    cv::setMouseCallback(mapWindowName, onMouseClick, &mapViz.cellSize);
 
     narrate.speak("System initialized.");
 
@@ -103,8 +78,7 @@ int main() {
         putText(legend[3], "Segmentation", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
         frame.copyTo(win[0]);
 
-        string locationID;
-        cv::Rect redBox = qrDetector.detect(frame, locationID);
+        string locationID = qrDetector.detect(frame);
 
         if (!locationID.empty()) {
             // Only act if the location is new
@@ -130,7 +104,7 @@ int main() {
                     }
                     // 2. If we are OFF the planned path, trigger a reroute
                     else {
-                        narrate.speak("Rerouting from " + locationID);
+                        narrate.speak("Off course. Rerouting from " + locationID);
                         cout << "Rerouting from " << locationID << " to " << destination << endl;
 
                         currentIntPath = navigator.findPath(locationID, destination, reader.getGraph(), reader.getGridWidth());
@@ -145,7 +119,7 @@ int main() {
                                 narrate.speak("Reroute successful. Next stop is " + nextNode);
                             }
                             else {
-                                narrate.speak("Reroute successful. Proceed to destination " + destination);
+                                narrate.speak("Reroute successful. Proceed to " + destination);
                             }
                         }
                         else {
@@ -188,46 +162,6 @@ int main() {
                         }
                     }
                 }
-            } // ADD THE "ELSE IF" right after this closing brace
-            else if (isNavigating && redBox.area() > 0) {
-                auto now = high_resolution_clock::now();
-                duration<double> time_span = duration_cast<duration<double>>(now - lastFeedbackTime);
-
-                // Provide feedback only every 2 seconds to avoid overwhelming the user
-                if (time_span.count() > 2.0) {
-                    // --- Directional Guidance (Left/Right) ---
-                    // Get the center of the camera frame
-                    int frame_center_x = frame.cols / 2;
-                    // Get the center of the detected red box
-                    int red_box_center_x = redBox.x + redBox.width / 2;
-
-                    // Define a tolerance zone around the center
-                    int tolerance = frame.cols / 10; // e.g., 10% of the frame width
-
-                    if (red_box_center_x < frame_center_x - tolerance) {
-                        narrate.speak("Turn slightly left");
-                        lastFeedbackTime = now;
-                    }
-                    else if (red_box_center_x > frame_center_x + tolerance) {
-                        narrate.speak("Turn slightly right");
-                        lastFeedbackTime = now;
-                    }
-
-                    // --- Distance Guidance (Forward/Backward) ---
-                    double frame_area = frame.cols * frame.rows;
-                    double red_box_area = redBox.area();
-                    double area_ratio = red_box_area / frame_area;
-
-                    // These thresholds may need tuning based on your camera and environment
-                    if (area_ratio > 0.15) { // If the red area takes up > 15% of the view
-                        narrate.speak("You are too close to the wall");
-                        lastFeedbackTime = now;
-                    }
-                    else if (area_ratio < 0.01) { // If the red area takes up < 1% of the view
-                        narrate.speak("You are too far from the wall");
-                        lastFeedbackTime = now;
-                    }
-                }
             }
         }
 
@@ -237,7 +171,6 @@ int main() {
         bool blinkState = (frameCount / 20) % 2 == 1; // Blink every 20 frames
         Mat mapView = mapViz.drawMap(tripManager.getCurrentLocation(), destination, currentIntPath, reader.getGridWidth(), startNode, blinkState);
         if (!mapView.empty()) {
-            imshow(mapWindowName, mapView);
             imshow("Navigation Map", mapView);
         }
 
@@ -258,4 +191,3 @@ int main() {
         if (key == 'q') break;
     }
 }
-

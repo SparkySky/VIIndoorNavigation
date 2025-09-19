@@ -1,6 +1,7 @@
 #pragma once
 #include <opencv2/opencv.hpp>
 #include <string>
+#include "Text2Speech.h"
 
 class QRDetector {
 public:
@@ -12,4 +13,5 @@ public:
 private:
     cv::Mat grayscale, thresold;
     cv::Mat extractRedRegion(const cv::Mat& frame);
+    Text2Speech narrate;
 };
