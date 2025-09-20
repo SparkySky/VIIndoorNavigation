@@ -219,8 +219,17 @@ int main() {
         }
 
         if (!locationID.empty()) {
-            // Only act if the location is new
-            if (locationID != lastLocationID) {
+            // Check for short directional commands first
+            if (locationID == "TL") {
+                narrate.speak("Turn left");
+                cout << "Directional command: Turn left" << endl;
+            }
+            else if (locationID == "TR") {
+                narrate.speak("Turn right");
+                cout << "Directional command: Turn right" << endl;
+            }
+            // Only act if the location is new and not a directional command
+            else if (locationID != lastLocationID) {
                 lastLocationID = locationID; // Update last seen location immediately
                 narrate.speak("You're at " + locationID);
 
