@@ -73,11 +73,11 @@ void drawSelectionOnScreen(Mat& image, const UIForVI& ui) {
     putText(image, "Selected: " + selection, Point(20, image.rows / 2), FONT_HERSHEY_SIMPLEX, 1.2, Scalar(0, 255, 255), 3);
 }
 
-
+int TRLoc = 0;
 
 int main() {
-    //VideoCapture cap(2, CAP_DSHOW);    // 0 (Default camera), >= 1 (other input)
-    VideoCapture cap(0);
+    VideoCapture cap(2, CAP_DSHOW);    // 0 (Default camera), >= 1 (other input)
+    //VideoCapture cap(0);
     if (!cap.isOpened()) {
         cerr << "Camera not accessible.\n";
         return -1;
@@ -152,6 +152,34 @@ int main() {
 
         // Check for a new, valid QR scan when NOT in selection mode
         if (!locationID.empty() && locationID != lastLocationID && !uiManager.is_active()) {
+            // Check for short directional commands first
+            if (locationID == "TL") {
+                narrate.speak_high_priority("Turn left");
+                cout << "Directional command: Turn left" << endl;
+                if (TRLoc == 0) {
+                    narrate.speak_high_priority("To reach toilet, N012, N011 and N010");
+                    TRLoc++;
+                }
+                else if (TRLoc == 1) {
+                    narrate.speak_high_priority("To reach N012, N011 and N010.");
+                    TRLoc--;
+                }
+                continue;
+            }
+            else if (locationID == "TR") {
+                //narrate.speak_high_priority("Turn right");
+                cout << "Directional command: Turn right" << endl;
+                if (TRLoc == 0) {
+                    narrate.speak_high_priority("Turn right to reach toilet, N012, N011 and N010");
+                    TRLoc++;
+                }
+                else if (TRLoc == 1) {
+                    narrate.speak_high_priority("Turn right to reach N012, N011 and N010");
+                    TRLoc--;
+                }
+                continue;
+            }
+
             lastLocationID = locationID;
             narrate.speak_high_priority("You are at " + locationID);
 

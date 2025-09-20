@@ -50,10 +50,10 @@ cv::Rect QRDetector::detect(cv::Mat& frame, std::string& decodedData) {
 
 cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
     // Configure batch size here - change this value as needed
-    const int kBatchSize = 20;
+    const int kBatchSize = 10;
 
     // Configure confidence threshold (percentage) - only show results above this confidence
-    const double kConfidenceThreshold = 10.0;
+    const double kConfidenceThreshold = 5.0;
 
     // Enable/disable text-to-speech
     const bool kEnableTts = true;
