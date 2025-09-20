@@ -19,6 +19,12 @@ using namespace std;
 using namespace cv;
 using namespace std::chrono;
 
+// --- Global variables for UI and Callbacks ---
+UIForVI uiManager;
+UIForVI terminalUI; // The non-blocking terminal UI
+const string imageProcessingWindow = "Image Processing";
+bool mouseSelectionConfirmed = false;
+
 // Partition Config
 int const imgPerCol = 1, imgPerRow = 4;
 Mat largeWin, win[imgPerCol * imgPerRow],
@@ -39,9 +45,39 @@ void onMouseClick(int event, int x, int y, int flags, void* userdata) {
     }
 }
 
+// Mouse callback that works with the non-blocking UI
+void onMouseCallback(int event, int x, int y, int flags, void* userdata) {
+    if (uiManager.is_active()) {
+        if (event == EVENT_MOUSEWHEEL) {
+            int delta = getMouseWheelDelta(flags);
+            if (delta > 0) uiManager.scroll_up();
+            else uiManager.scroll_down();
+        }
+        if (event == EVENT_LBUTTONDOWN) {
+            // This is the crucial part: the callback simply sets a flag.
+            // The main loop is responsible for acting on it.
+            mouseSelectionConfirmed = true;
+        }
+    }
+}
+
+// Helper function to draw the current selection on the video feed
+void drawSelectionOnScreen(Mat& image, const UIForVI& ui) {
+    if (!ui.is_active()) return;
+    Mat overlay;
+    image.copyTo(overlay);
+    rectangle(overlay, Rect(0, 0, image.cols, image.rows), Scalar(0, 0, 0), FILLED);
+    addWeighted(overlay, 0.7, image, 0.3, 0, image);
+
+    string selection = ui.get_current_selection();
+    putText(image, "Selected: " + selection, Point(20, image.rows / 2), FONT_HERSHEY_SIMPLEX, 1.2, Scalar(0, 255, 255), 3);
+}
+
+
 
 int main() {
-    VideoCapture cap(1);    // 0 (Default camera), >= 1 (other input)
+    //VideoCapture cap(2, CAP_DSHOW);    // 0 (Default camera), >= 1 (other input)
+    VideoCapture cap(0);
     if (!cap.isOpened()) {
         cerr << "Camera not accessible.\n";
         return -1;
@@ -52,7 +88,6 @@ int main() {
     TripManager tripManager;
     Navigator navigator;
     Text2Speech narrate;
-    UIForVI uiManager;
     GridRouteReader reader; // This object reads the grid and creates the graph
 
     string destNode;
@@ -62,17 +97,10 @@ int main() {
 
     try {
         reader.gridLoader("NavigationFile\\RouteGrid.txt");
-    }
-    catch (Exception e) {
-        narrate.speak_high_priority("Error reading RouteGrid.txt");
-        return 1;
-    }
-
-    try {
         navigator.loadNodeMap("NavigationFile\\NodeMapping.txt", reader.getGridWidth());;
     }
     catch (Exception e) {
-        narrate.speak_high_priority("Error reading NodeMapping.txt");
+        narrate.speak_high_priority("Error reading Navigation Files");
         return 1;
     }
 
@@ -81,187 +109,163 @@ int main() {
     string startNode = "";
     int frameCount = 0;
     string lastLocationID = "";
+    string lastSpokenSelection = "";
+    Mat selectionFrame;
+    string finalDestination = "";
 
     // Tool: Mapping coordinate tool
     const std::string mapWindowName = "Navigation Map";
-    cv::namedWindow(mapWindowName); // Create a named window
-    cv::setMouseCallback(mapWindowName, onMouseClick, &mapViz.cellSize);
 
+    // --- Window Setup ---
+    namedWindow(imageProcessingWindow);
+    setMouseCallback(imageProcessingWindow, onMouseCallback, nullptr);
+    namedWindow("Navigation Map");
+    createTrackbar("Min Area", imageProcessingWindow, &qrDetector.minAreaTrackbar, 20000);
 
-    ////DEBUG
-    const std::string windowName = "Shape Min Area Visualizer";
-    cv::namedWindow(windowName);
-    cv::createTrackbar("Min Area", windowName, &qrDetector.minAreaTrackbar, 20000);
-
-    narrate.speak_low_priority("System initialized");
+    Mat blackPanel = Mat::zeros(selectionFrame.size(), selectionFrame.type());
+    narrate.speak_low_priority("System initialized. Scan a QR Code to start.");
     while (true) {
         frameCount++;
         narrate.update_status();
 
         Mat frame;
-        cap >> frame;
-        if (frame.empty()) continue;
-
-        // Create partition
-        createWindowPartition(frame, largeWin, win, legend, imgPerCol, imgPerRow);
-        putText(legend[0], "Original RGB", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
-        putText(legend[1], "HSV Filter", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
-        putText(legend[2], "Mask BGR", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
-        putText(legend[3], "Segmentation", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
-        frame.copyTo(win[0]);
-
         string locationID;
-        cv::Rect redBox = qrDetector.detect(frame, locationID);
+        cv::Rect redBox;
 
-        if (!locationID.empty()) {
-            // Only act if the location is new
-            if (locationID != lastLocationID) {
-                lastLocationID = locationID; // Update last seen location immediately
-                narrate.speak_high_priority("You're at " + locationID);
+        if (!uiManager.is_active()) {
+            cap >> frame;
+            if (frame.empty()) continue;
 
-                if (isNavigating) {
-                    // --- NAVIGATION IN PROGRESS ---
+            // Process the live frame
+            createWindowPartition(frame, largeWin, win, legend, imgPerCol, imgPerRow);
+            putText(legend[0], "Original RGB", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
+            putText(legend[1], "HSV Filter", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
+            putText(legend[2], "Mask BGR", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
+            putText(legend[3], "Segmentation", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
+            frame.copyTo(win[0]);
+            redBox = qrDetector.detect(frame, locationID);
+        }
+        else {
+            frame = blackPanel;
+            selectionFrame.copyTo(win[0]);
+        }
 
-                    // 1. Check if we are ON the planned path
-                    if (tripManager.isLocationOnPath(locationID)) {
-                        tripManager.updateLocation(locationID);
+        // Check for a new, valid QR scan when NOT in selection mode
+        if (!locationID.empty() && locationID != lastLocationID && !uiManager.is_active()) {
+            lastLocationID = locationID;
+            narrate.speak_high_priority("You are at " + locationID);
 
-                        // Check for arrival right after updating
-                        if (tripManager.isPathEmpty()) {
-                            narrate.speak_high_priority("Arrived at " + destination);
-                            isNavigating = false;
-                            destination = "";
-                            currentIntPath.clear();
-                            lastLocationID = ""; // <<< ADD THIS LINE TO RESET THE STATE
-                        }
-                    }
-                    // 2. If we are OFF the planned path, trigger a reroute
-                    else {
-                        narrate.speak_low_priority("Rerouting from " + locationID);
-                        cout << "Rerouting from " << locationID << " to " << destination << endl;
-
-                        currentIntPath = navigator.findPath(locationID, destination, reader.getGraph(), reader.getGridWidth());
-
-                        if (!currentIntPath.empty()) {
-                            auto stringPath = navigator.convertPathToStrings(currentIntPath, reader.getGridWidth());
-                            tripManager.setPath(stringPath);
-                            tripManager.updateLocation(locationID); // Update with the new path
-
-                            string nextNode = tripManager.getNextNode();
-                            if (!nextNode.empty()) {
-                                narrate.speak_low_priority("Rerouted. Next stop is " + nextNode);
-                            }
-                            else {
-                                narrate.speak_low_priority("Rerouted. Proceed to destination" + destination);
-                            }
-                        }
-                        else {
-                            narrate.speak_high_priority("Sorry, I could not find a new path from here.");
-                            isNavigating = false;
-                            destination = "";
-                            currentIntPath.clear();
-                        }
+            if (isNavigating) {
+                if (tripManager.isLocationOnPath(locationID)) {
+                    tripManager.updateLocation(locationID);
+                    if (tripManager.isPathEmpty()) {
+                        narrate.speak_high_priority("Arrived at " + finalDestination);
+                        isNavigating = false;
+                        finalDestination = "";
+                        startNode = "";
+                        currentIntPath.clear();
+                        lastLocationID = "";
                     }
                 }
                 else {
-                    // START A NEW TRIP
-                    startNode = locationID;
-                    cout << "\nStart node   : " << locationID << endl;
-                    destination = uiManager.selectDestination(locationID);
+                    // --- CORRECTED REROUTING LOGIC ---
+                    narrate.speak_high_priority("Rerouting from " + locationID);
 
-                    if (destination != "" && destination != "Cancel") {
-                        currentIntPath = navigator.findPath(locationID, destination, reader.getGraph(), reader.getGridWidth());
+                    // Use the reliable 'finalDestination' variable
+                    currentIntPath = navigator.findPath(locationID, finalDestination, reader.getGraph(), reader.getGridWidth());
 
-                        if (!currentIntPath.empty()) {
-                            auto stringPath = navigator.convertPathToStrings(currentIntPath, reader.getGridWidth());
-                            tripManager.setPath(stringPath);
-                            tripManager.updateLocation(locationID);
-
-                            isNavigating = true;
-                            cout << "End node     : " << destination << endl;
-
-                            string nextNode = tripManager.getNextNode();
-                            if (!nextNode.empty()) {
-                                narrate.speak_low_priority("Navigating to " + destination + ". Next stop is " + nextNode);
-                            }
-                            else {
-                                narrate.speak_low_priority("Navigating to destination " + destination);
-                            }
-                            startNode = "";
-                        }
-                        else {
-                            narrate.speak_high_priority("Sorry, I could not find a path to " + destination);
-                            startNode = "";
-                        }
+                    if (!currentIntPath.empty()) {
+                        auto stringPath = navigator.convertPathToStrings(currentIntPath, reader.getGridWidth());
+                        tripManager.setPath(stringPath);
+                        tripManager.updateLocation(locationID);
+                        narrate.speak_low_priority("Rerouted. Next stop is " + tripManager.getNextNode());
+                    }
+                    else {
+                        narrate.speak_high_priority("Sorry, a new path could not be found from here.");
+                        isNavigating = false;
+                        finalDestination = "";
+                        currentIntPath.clear();
                     }
                 }
             }
-            else if (isNavigating && redBox.area() > 0) {
-                auto now = high_resolution_clock::now();
-                duration<double> time_span = duration_cast<duration<double>>(now - lastFeedbackTime);
-
-                // Provide feedback only every 2 seconds to avoid overwhelming the user
-                if (time_span.count() > 2.0) {
-                    // --- Directional Guidance (Left/Right) ---
-                    // Get the center of the camera frame
-                    int frame_center_x = frame.cols / 2;
-                    // Get the center of the detected red box
-                    int red_box_center_x = redBox.x + redBox.width / 2;
-
-                    // Define a tolerance zone around the center
-                    int tolerance = frame.cols / 10; // e.g., 10% of the frame width
-
-                    if (red_box_center_x < frame_center_x - tolerance) {
-                        narrate.speak_low_priority("slide left");
-                        lastFeedbackTime = now;
-                    }
-                    else if (red_box_center_x > frame_center_x + tolerance) {
-                        narrate.speak_low_priority("slide right");
-                        lastFeedbackTime = now;
-                    }
-
-                    // --- Distance Guidance (Forward/Backward) ---
-                    double frame_area = frame.cols * frame.rows;
-                    double red_box_area = redBox.area();
-                    double area_ratio = red_box_area / frame_area;
-
-                    // These thresholds may need tuning based on your camera and environment
-                    if (area_ratio > 0.15) { // If the red area takes up > 15% of the view
-                        narrate.speak_low_priority("You are too close to the wall");
-                        lastFeedbackTime = now;
-                    }
-                    else if (area_ratio < 0.01) { // If the red area takes up < 1% of the view
-                        narrate.speak_low_priority("You are too far from the wall");
-                        lastFeedbackTime = now;
-                    }
-                }
+            else {
+                startNode = locationID;
+                uiManager.activate(locationID);
+                lastSpokenSelection = "";
+                win[0].copyTo(selectionFrame);
             }
         }
 
-        resize(largeWin, largeWin, cv::Size(1400, 320));
-        imshow("Image Processing", largeWin);
+        // Handle user input IF selection mode is active
+        if (uiManager.is_active()) {
+            // 1. Create a temporary copy of the frozen frame to draw on
+            Mat tempDisplayFrame = selectionFrame.clone();
 
-        bool blinkState = (frameCount / 20) % 2 == 1; // Blink every 20 frames
+            // 2. Draw the selection menu onto the temporary copy
+            drawSelectionOnScreen(tempDisplayFrame, uiManager);
+
+            // --- ENHANCED FREEZE: Black out other panels ---
+            Mat blackPanel = Mat::zeros(selectionFrame.size(), selectionFrame.type());
+            blackPanel.copyTo(win[0]);         // Black out the first panel
+            tempDisplayFrame.copyTo(win[1]);   // Put the frame WITH the menu in the second panel
+            blackPanel.copyTo(win[2]);         // Black out the third panel
+            blackPanel.copyTo(win[3]);         // Black out the fourth panel
+
+            string currentSelection = uiManager.get_current_selection();
+            if (currentSelection != lastSpokenSelection) {
+                narrate.speak_low_priority("Option " + currentSelection);
+                lastSpokenSelection = currentSelection;
+            }
+
+            char key = (char)waitKey(30);
+
+            if (key == 'w' || key == 'W') uiManager.scroll_up();
+            else if (key == 's' || key == 'S') uiManager.scroll_down();
+
+            if (key == 'c' || key == 'C' || mouseSelectionConfirmed) {
+                destination = uiManager.get_current_selection();
+                uiManager.deactivate();
+                mouseSelectionConfirmed = false;
+            }
+            imshow(imageProcessingWindow, largeWin);
+        }
+        else {
+            waitKey(1);
+        }
+
+        // --- START NAVIGATION (handles a confirmed selection) ---
+        if (!destination.empty() && !isNavigating) {
+            if (destination != "Cancel") {
+                // Store the chosen destination in our reliable variable
+                finalDestination = destination;
+                narrate.speak_high_priority("Navigating to " + finalDestination);
+                currentIntPath = navigator.findPath(startNode, finalDestination, reader.getGraph(), reader.getGridWidth());
+                if (!currentIntPath.empty()) {
+                    auto stringPath = navigator.convertPathToStrings(currentIntPath, reader.getGridWidth());
+                    tripManager.setPath(stringPath);
+                    tripManager.updateLocation(startNode);
+                    isNavigating = true;
+                }
+                else {
+                    narrate.speak_high_priority("Sorry, path not found.");
+                    finalDestination = ""; // Reset if path fails
+                }
+            }
+            else {
+                lastLocationID = "";
+                narrate.speak_low_priority("Navigation cancelled.");
+            }
+            destination = ""; // Reset the temporary variable
+        }
+
+        // --- Step 4: Always draw the final display ---
+        resize(largeWin, largeWin, cv::Size(1400, 320));
+        imshow(imageProcessingWindow, largeWin);
+
+        bool blinkState = (frameCount / 20) % 2 == 1;
         Mat mapView = mapViz.drawMap(tripManager.getCurrentLocation(), destination, currentIntPath, reader.getGridWidth(), startNode, blinkState);
         if (!mapView.empty()) {
-            imshow(mapWindowName, mapView);
+            imshow("Navigation Map", mapView);
         }
-        //DEBUG
-        cv::imshow(windowName, frame);
-
-        int key = waitKey(1);
-        // If ANY key is pressed (waitKey returns something other than -1),
-        // stop the current narration.
-        if (key != -1) {
-            narrate.stop();
-        }
-        if (key == 'x') {
-            tripManager.setPath(vector<string>{});
-            isNavigating = false;
-            startNode = "";
-            currentIntPath.clear();
-            narrate.speak_low_priority("Navigation cancelled");
-        }
-        if (key == 'q') break;
     }
 }

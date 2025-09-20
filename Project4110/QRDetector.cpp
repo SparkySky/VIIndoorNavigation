@@ -50,10 +50,10 @@ cv::Rect QRDetector::detect(cv::Mat& frame, std::string& decodedData) {
 
 cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
     // Configure batch size here - change this value as needed
-    const int kBatchSize = 30;
+    const int kBatchSize = 20;
 
     // Configure confidence threshold (percentage) - only show results above this confidence
-    const double kConfidenceThreshold = 20.0;
+    const double kConfidenceThreshold = 10.0;
 
     // Enable/disable text-to-speech
     const bool kEnableTts = true;
@@ -199,7 +199,7 @@ cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
             }
         }
 
-        const int kStabilityThreshold = 15; // Require 15 stable frames before speaking (about 0.5s)
+        const int kStabilityThreshold = 10; // Require 15 stable frames before speaking (about 0.5s)
 
         // Check if the best result has changed from the previous frame
         if (bestResult == previousBestResult) {
@@ -377,7 +377,7 @@ void QRDetector::shapeRecognition(
             double sideRatio = maxSideSq / minSideSq;
 
             // Adjust this tolerance. Higher mean more lenient to shape(value: 2.0).
-            if (sideRatio < 3.0) {
+            if (sideRatio < 7.0) {
                 isValidShape = true;
             }
         }
