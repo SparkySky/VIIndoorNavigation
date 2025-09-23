@@ -1,0 +1,25 @@
+﻿  Graph.cpp
+  GridRouteReader.cpp
+  Navigator.cpp
+  Source.cpp
+C:\opencv\build\include\opencv2\core.hpp(1,1): warning C4819: The file contains a character that cannot be represented in the current code page (950). Save the file in Unicode format to prevent data loss
+  (compiling source file 'Source.cpp')
+  
+C:\opencv\build\include\opencv2\core.hpp(1,1): warning C4819: The file contains a character that cannot be represented in the current code page (950). Save the file in Unicode format to prevent data loss
+  (compiling source file 'Source.cpp')
+  
+C:\opencv\build\include\opencv2\core.hpp(1,1): warning C4819: The file contains a character that cannot be represented in the current code page (950). Save the file in Unicode format to prevent data loss
+  (compiling source file 'Source.cpp')
+  
+C:\opencv\build\include\opencv2\imgcodecs.hpp(1,1): warning C4819: The file contains a character that cannot be represented in the current code page (950). Save the file in Unicode format to prevent data loss
+  (compiling source file 'Source.cpp')
+  
+C:\opencv\build\include\opencv2\calib3d.hpp(678,1): warning C4819: The file contains a character that cannot be represented in the current code page (950). Save the file in Unicode format to prevent data loss
+  (compiling source file 'Source.cpp')
+  
+  Generating code
+  27 of 1173 functions ( 2.3%) were compiled, the rest were copied from previous compilation.
+    4 functions were new in current compilation
+    31 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  Project4110.vcxproj -> C:\Users\NightTv\Desktop\hi2\x64\Release\Project4110.exe
