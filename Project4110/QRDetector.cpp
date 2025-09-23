@@ -102,52 +102,10 @@ cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
     //cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
     int leftCount = 0, centerCount = 0, rightCount = 0;
-    cv::cvtColor(mask, bgr, cv::COLOR_GRAY2BGR); // Prepare BGR mask for drawing
+    cv::cvtColor(mask, bgr, cv::COLOR_GRAY2BGR); // Prepare BGR mask for bounding box drawing
 
-    // Call the new module to do the actual shape detection and drawing
+    // Call the new module to do the shape detection and bounding box drawing
     shapeRecognition(mask, outputFrame, lab, bgr, leftCount, centerCount, rightCount);
-    //cv::Mat outputFrame = frame.clone();
-    //const double minArea = 300;
-
-    //for (size_t i = 0; i < contours.size(); i++) {
-    //    if (cv::contourArea(contours[i]) < minArea) {
-    //        continue;
-    //    }
-
-    //    cv::RotatedRect rotatedRect = cv::minAreaRect(contours[i]);
-    //    cv::Rect boundingBox = rotatedRect.boundingRect(); // Get the bounding box from the rotated rect
-
-    //    float width = rotatedRect.size.width;
-    //    float height = rotatedRect.size.height;
-    //    float aspectRatio = std::max(width, height) / std::min(width, height);
-
-    //    std::vector<cv::Point> approx;
-    //    double epsilon = 0.04 * cv::arcLength(contours[i], true);
-    //    cv::approxPolyDP(contours[i], approx, epsilon, true);
-
-    //    bool isValidRegion = false;
-    //    if (approx.size() == 4 && aspectRatio < 1.3) {
-    //        isValidRegion = true;
-    //    }
-
-    //    if (isValidRegion) {
-    //        cv::rectangle(outputFrame, boundingBox, cv::Scalar(0, 255, 0), 2);
-    //        cv::rectangle(lab, boundingBox, cv::Scalar(0, 255, 0), 2);
-    //        cv::rectangle(bgr, boundingBox, cv::Scalar(0, 255, 0), 2);
-
-    //        int centerX = boundingBox.x + boundingBox.width / 2;
-
-    //        if (centerX < screenWidth / 3) {
-    //            leftCount++;
-    //        }
-    //        else if (centerX < 2 * screenWidth / 3) {
-    //            centerCount++;
-    //        }
-    //        else {
-    //            rightCount++;
-    //        }
-    //    }
-    //}
 
     // Generate current frame detection message
     std::string currentFrameResult;
