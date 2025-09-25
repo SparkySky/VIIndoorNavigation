@@ -287,7 +287,7 @@ cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
 }
 
 
-// dedicated function for shape analysis.
+// Function to perform shape analysis
 void QRDetector::shapeRecognition(
     const cv::Mat& mask,
     cv::Mat& outputFrame,
