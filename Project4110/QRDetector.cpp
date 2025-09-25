@@ -7,6 +7,8 @@
 #include <algorithm>
 
 #include "QRDetector.h"
+#include "UIForVI.h"
+#include "ShapeAnalysis.h"
 
 using namespace cv;
 using namespace std;
@@ -14,15 +16,10 @@ using namespace std;
 boolean justLaunch = 1;
 QRDetector::QRDetector() {}
 extern Mat win[];
+UIForVI ui;
 
-// Helper function to calculate squared distance between two points
-// Using squared distance is often faster as it avoids the sqrt operation
-double distSq(const cv::Point& p1, const cv::Point& p2) {
-    return (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
-}
-
-cv::Rect QRDetector::detect(cv::Mat& frame, std::string& decodedData) {
-    cv::Mat redRegion = extractRedRegion(frame);
+cv::Rect QRDetector::detect(cv::Mat& frame, std::string& decodedData, UIForVI& uiManager, ShapeAnalysis& analyser) {
+    cv::Mat redRegion = extractRedRegion(frame, analyser);
     if (redRegion.empty()) {
         return cv::Rect();
     }
@@ -48,12 +45,12 @@ cv::Rect QRDetector::detect(cv::Mat& frame, std::string& decodedData) {
 }
 
 
-cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
+cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame, ShapeAnalysis& analyser) {
     // Configure batch size here - change this value as needed
-    const int kBatchSize = 10;
+    const int kBatchSize = 5;
 
     // Configure confidence threshold (percentage) - only show results above this confidence
-    const double kConfidenceThreshold = 5.0;
+    const double kConfidenceThreshold = 20;
 
     // Enable/disable text-to-speech
     const bool kEnableTts = true;
@@ -68,86 +65,27 @@ cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
     int screenWidth = frame.cols;
     cv::Mat lab, mask, bgr, outputFrame = frame.clone();
 
-    // Step 1: Convert to CIELAB color space
+    // Convert to CIELAB color space
     cv::cvtColor(frame, lab, cv::COLOR_BGR2Lab);
-
-    // Step 2: Define red thresholds in LAB
-
-    // Red typically has high 'a' (green-red) and low 'b' (blue-yellow)
-    //cv::Scalar lower_red(20, 150, 130); // L, a, b
-    //cv::Scalar upper_red(255, 255, 180);
-
-    // Wider, more inclusive range. Focused on Recall
-    //cv::Scalar lower_red(0, 140, 125);
-    //cv::Scalar upper_red(255, 255, 185);
 
     // Manual Adjust
     cv::Scalar lower_red(10, 140, 125);
     cv::Scalar upper_red(255, 255, 185);
 
 
-    // Step 3: Threshold to get red mask
+    // Threshold to get red mask
     cv::inRange(lab, lower_red, upper_red, mask);
 
-    // Step 4: Morphological cleanup
+    // Morphological cleanup
     cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
     cv::morphologyEx(mask, mask, cv::MORPH_OPEN, kernel);
     cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, kernel);
-
-    //// Step 5: Convert mask to BGR for visualization
-    //cv::cvtColor(mask, bgr, cv::COLOR_GRAY2BGR);
-
-    //// Step 6: Find contours
-    //std::vector<std::vector<cv::Point>> contours;
-    //cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
     int leftCount = 0, centerCount = 0, rightCount = 0;
     cv::cvtColor(mask, bgr, cv::COLOR_GRAY2BGR); // Prepare BGR mask for drawing
 
     // Call the new module to do the actual shape detection and drawing
-    shapeRecognition(mask, outputFrame, lab, bgr, leftCount, centerCount, rightCount);
-    //cv::Mat outputFrame = frame.clone();
-    //const double minArea = 300;
-
-    //for (size_t i = 0; i < contours.size(); i++) {
-    //    if (cv::contourArea(contours[i]) < minArea) {
-    //        continue;
-    //    }
-
-    //    cv::RotatedRect rotatedRect = cv::minAreaRect(contours[i]);
-    //    cv::Rect boundingBox = rotatedRect.boundingRect(); // Get the bounding box from the rotated rect
-
-    //    float width = rotatedRect.size.width;
-    //    float height = rotatedRect.size.height;
-    //    float aspectRatio = std::max(width, height) / std::min(width, height);
-
-    //    std::vector<cv::Point> approx;
-    //    double epsilon = 0.04 * cv::arcLength(contours[i], true);
-    //    cv::approxPolyDP(contours[i], approx, epsilon, true);
-
-    //    bool isValidRegion = false;
-    //    if (approx.size() == 4 && aspectRatio < 1.3) {
-    //        isValidRegion = true;
-    //    }
-
-    //    if (isValidRegion) {
-    //        cv::rectangle(outputFrame, boundingBox, cv::Scalar(0, 255, 0), 2);
-    //        cv::rectangle(lab, boundingBox, cv::Scalar(0, 255, 0), 2);
-    //        cv::rectangle(bgr, boundingBox, cv::Scalar(0, 255, 0), 2);
-
-    //        int centerX = boundingBox.x + boundingBox.width / 2;
-
-    //        if (centerX < screenWidth / 3) {
-    //            leftCount++;
-    //        }
-    //        else if (centerX < 2 * screenWidth / 3) {
-    //            centerCount++;
-    //        }
-    //        else {
-    //            rightCount++;
-    //        }
-    //    }
-    //}
+    analyser.shapeRecognition(mask, outputFrame, lab, bgr, leftCount, centerCount, rightCount);
 
     // Generate current frame detection message
     std::string currentFrameResult;
@@ -174,7 +112,7 @@ cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
     frameCounter++;
 
     // Update running statistics
-    if (frameCounter >= 10) { // Start showing stats after 10 frames
+    if (frameCounter >= 5) { // Start showing stats after 5 frames
         std::map<std::string, int> resultCount;
         for (const auto& result : detectionResults) {
             resultCount[result]++;
@@ -199,7 +137,7 @@ cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
             }
         }
 
-        const int kStabilityThreshold = 10; // Require 15 stable frames before speaking (about 0.5s)
+        const int kStabilityThreshold = 10; // Require 5 stable frames before speaking (about 0.5s)
 
         // Check if the best result has changed from the previous frame
         if (bestResult == previousBestResult) {
@@ -328,85 +266,8 @@ cv::Mat QRDetector::extractRedRegion(const cv::Mat& frame) {
     return mask;
 }
 
-
-// dedicated function for shape analysis.
-void QRDetector::shapeRecognition(
-    const cv::Mat& mask,
-    cv::Mat& outputFrame,
-    cv::Mat& lab,
-    cv::Mat& bgr,
-    int& leftCount,
-    int& centerCount,
-    int& rightCount)
-{
-    std::vector<std::vector<cv::Point>> contours;
-    cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-    int screenWidth = outputFrame.cols;
-
-    for (const auto& contour : contours) {
-        if (cv::contourArea(contour) < this->minAreaTrackbar) {
-            continue;
-        }
-
-        std::vector<cv::Point> approx;
-        double epsilon = 0.04 * cv::arcLength(contour, true);
-        cv::approxPolyDP(contour, approx, epsilon, true);
-
-        // SHAPE CHECK
-        bool isValidShape = false;
-        if (approx.size() == 4 && cv::isContourConvex(approx)) {
-            // Get the 4 corner points
-            cv::Point p1 = approx[0];
-            cv::Point p2 = approx[1];
-            cv::Point p3 = approx[2];
-            cv::Point p4 = approx[3];
-
-            // Calculate the squared lengths of the four sides
-            double side1 = distSq(p1, p2);
-            double side2 = distSq(p2, p3);
-            double side3 = distSq(p3, p4);
-            double side4 = distSq(p4, p1);
-
-            // Find the shortest and longest side
-            double minSideSq = std::min({ side1, side2, side3, side4 });
-            double maxSideSq = std::max({ side1, side2, side3, side4 });
-
-            // Check if the longest side is not too much longer than the shortest side
-            // This ratio check is robust to perspective skew
-            double sideRatio = maxSideSq / minSideSq;
-
-            // Adjust this tolerance. Higher mean more lenient to shape(value: 2.0).
-            if (sideRatio < 7.0) {
-                isValidShape = true;
-            }
-        }
-
-        if (isValidShape) {
-            cv::Rect boundingBox = cv::boundingRect(approx); // Use the approx points for the bounding box
-
-            // Draw and count the valid shape
-            cv::rectangle(outputFrame, boundingBox, cv::Scalar(0, 255, 0), 2);
-            cv::rectangle(lab, boundingBox, cv::Scalar(0, 255, 0), 2);
-            cv::rectangle(bgr, boundingBox, cv::Scalar(0, 255, 0), 2);
-
-            int centerX = boundingBox.x + boundingBox.width / 2;
-            if (centerX < screenWidth / 3) {
-                leftCount++;
-            }
-            else if (centerX < 2 * screenWidth / 3) {
-                centerCount++;
-            }
-            else {
-                rightCount++;
-            }
-        }
-    }
-}
-
-
-string QRDetector::detect(const Mat& frame) {
-    Mat mask = extractRedRegion(frame);
+string QRDetector::detect(const Mat& frame, UIForVI& uiManager, ShapeAnalysis& analyser) {
+    Mat mask = extractRedRegion(frame, analyser);
     vector<vector<Point>> contours;
 
     findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
@@ -426,14 +287,11 @@ string QRDetector::detect(const Mat& frame) {
                 
                 if (!upscaled.empty() && upscaled.cols > 0 && upscaled.rows > 0) {
                     try {
-                        string data = qrDecoder.detectAndDecode(upscaled);                    
+                        string data = qrDecoder.detectAndDecode(upscaled);
                         if (!data.empty()) {
                             cout << "At node      : " << data << endl; // For Debug Nodes
-
                             imshow("QR Cropped", cropped);
                             waitKey(1);
-
-                            return data;
                         }
                     }
                     catch (exception e) {

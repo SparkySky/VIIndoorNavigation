@@ -22,7 +22,7 @@ public:
 
     std::vector<std::string> nodesAvailable;
     void loadDestinationsFromFile(const std::string& filename);
-
+    bool validateDestination(const std::string& input);
 private:
     bool active;
     int selected_index;

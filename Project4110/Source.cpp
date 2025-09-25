@@ -14,6 +14,7 @@
 #include "UIForVI.h"
 #include "GridRouteReader.h"
 #include "MapVisualizer.h"
+#include "ShapeAnalysis.h"
 
 using namespace std;
 using namespace cv;
@@ -21,7 +22,7 @@ using namespace std::chrono;
 
 // --- Global variables for UI and Callbacks ---
 UIForVI uiManager;
-UIForVI terminalUI; // The non-blocking terminal UI
+ShapeAnalysis AnalyseShape;
 const string imageProcessingWindow = "Image Processing";
 bool mouseSelectionConfirmed = false;
 
@@ -89,6 +90,7 @@ int main() {
     Navigator navigator;
     Text2Speech narrate;
     GridRouteReader reader; // This object reads the grid and creates the graph
+    
 
     string destNode;
     string destination;
@@ -120,7 +122,7 @@ int main() {
     namedWindow(imageProcessingWindow);
     setMouseCallback(imageProcessingWindow, onMouseCallback, nullptr);
     namedWindow("Navigation Map");
-    createTrackbar("Min Area", imageProcessingWindow, &qrDetector.minAreaTrackbar, 20000);
+    createTrackbar("Min Area", imageProcessingWindow, &AnalyseShape.minAreaTrackbar, 20000);
 
     Mat blackPanel = Mat::zeros(selectionFrame.size(), selectionFrame.type());
     narrate.speak_low_priority("System initialized. Scan a QR Code to start.");
@@ -138,12 +140,12 @@ int main() {
 
             // Process the live frame
             createWindowPartition(frame, largeWin, win, legend, imgPerCol, imgPerRow);
-            putText(legend[0], "Original RGB", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
-            putText(legend[1], "HSV Filter", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
-            putText(legend[2], "Mask BGR", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
+            putText(legend[0], "Camera Frame", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
+            putText(legend[1], "Camera Frame 2", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
+            putText(legend[2], "CIELAB Filter", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
             putText(legend[3], "Segmentation", Point(5, 11), 1, 1, Scalar(250, 250, 250), 1);
             frame.copyTo(win[0]);
-            redBox = qrDetector.detect(frame, locationID);
+            redBox = qrDetector.detect(frame, locationID, uiManager, AnalyseShape);
         }
         else {
             frame = blackPanel;
@@ -152,31 +154,23 @@ int main() {
 
         // Check for a new, valid QR scan when NOT in selection mode
         if (!locationID.empty() && locationID != lastLocationID && !uiManager.is_active()) {
+            // If scanned data (node) not in UIForVI.destination, then it is invalidQR
+            if (!uiManager.validateDestination(locationID)) {
+                narrate.speak_high_priority("Invalid QR");
+                cout << "Invalid QR data : " << locationID << endl;
+                locationID = "";
+                continue;
+            }
             // Check for short directional commands first
             if (locationID == "TL") {
                 narrate.speak_high_priority("Turn left");
                 cout << "Directional command: Turn left" << endl;
-                if (TRLoc == 0) {
-                    narrate.speak_high_priority("To reach toilet, N012, N011 and N010");
-                    TRLoc++;
-                }
-                else if (TRLoc == 1) {
-                    narrate.speak_high_priority("To reach N012, N011 and N010.");
-                    TRLoc--;
-                }
                 continue;
             }
             else if (locationID == "TR") {
                 //narrate.speak_high_priority("Turn right");
                 cout << "Directional command: Turn right" << endl;
-                if (TRLoc == 0) {
-                    narrate.speak_high_priority("Turn right to reach toilet, N012, N011 and N010");
-                    TRLoc++;
-                }
-                else if (TRLoc == 1) {
-                    narrate.speak_high_priority("Turn right to reach N012, N011 and N010");
-                    TRLoc--;
-                }
+                narrate.speak_high_priority("Turn right");
                 continue;
             }
 
@@ -196,10 +190,9 @@ int main() {
                     }
                 }
                 else {
-                    // --- CORRECTED REROUTING LOGIC ---
+                    // --- REROUTING LOGIC ---
                     narrate.speak_high_priority("Rerouting from " + locationID);
 
-                    // Use the reliable 'finalDestination' variable
                     currentIntPath = navigator.findPath(locationID, finalDestination, reader.getGraph(), reader.getGridWidth());
 
                     if (!currentIntPath.empty()) {
@@ -232,7 +225,7 @@ int main() {
             // 2. Draw the selection menu onto the temporary copy
             drawSelectionOnScreen(tempDisplayFrame, uiManager);
 
-            // --- ENHANCED FREEZE: Black out other panels ---
+            // FREEZE: Black out other panels
             Mat blackPanel = Mat::zeros(selectionFrame.size(), selectionFrame.type());
             blackPanel.copyTo(win[0]);         // Black out the first panel
             tempDisplayFrame.copyTo(win[1]);   // Put the frame WITH the menu in the second panel
@@ -261,7 +254,7 @@ int main() {
             waitKey(1);
         }
 
-        // --- START NAVIGATION (handles a confirmed selection) ---
+        // START NAVIGATION (handles a confirmed selection)
         if (!destination.empty() && !isNavigating) {
             if (destination != "Cancel") {
                 // Store the chosen destination in our reliable variable
@@ -286,7 +279,7 @@ int main() {
             destination = ""; // Reset the temporary variable
         }
 
-        // --- Step 4: Always draw the final display ---
+        // draw the final display 
         resize(largeWin, largeWin, cv::Size(1400, 320));
         imshow(imageProcessingWindow, largeWin);
 
