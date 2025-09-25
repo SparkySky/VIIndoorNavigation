@@ -1,11 +1,26 @@
-#include "UIforVI.h"
+#include "UIForVI.h"
+#include <fstream>
+#include <sstream>
 
 using namespace std;
 
 UIForVI::UIForVI() {
-    destinations = { "Cancel", "N001", "N002", "N003", "N004", "N005", "N006", "N007", "N008A", "N008B", "N009", "N010", "N011", "N012" };
+    destinations.push_back("Cancel"); // Always include "Cancel" as first option
+    loadDestinationsFromFile("NavigationFile\\NodeMapping.txt");
     active = false;
     selected_index = 0;
+}
+
+void UIForVI::loadDestinationsFromFile(const string& filename) {
+    ifstream file(filename);
+    string line;
+
+    while (getline(file, line)) {
+        // Trim and validate line if needed
+        if (!line.empty()) {
+            destinations.push_back(line);
+        }
+    }
 }
 
 void UIForVI::activate(const std::string& start_node) {

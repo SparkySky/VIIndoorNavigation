@@ -20,6 +20,9 @@ public:
     // --- Drawing ---
     void draw_to_console() const;
 
+    std::vector<std::string> nodesAvailable;
+    void loadDestinationsFromFile(const std::string& filename);
+
 private:
     bool active;
     int selected_index;

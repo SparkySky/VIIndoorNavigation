@@ -76,7 +76,7 @@ void drawSelectionOnScreen(Mat& image, const UIForVI& ui) {
 int TRLoc = 0;
 
 int main() {
-    VideoCapture cap(2, CAP_DSHOW);    // 0 (Default camera), >= 1 (other input)
+    VideoCapture cap(0);    // 0 (Default camera), >= 1 (other input)
     //VideoCapture cap(0);
     if (!cap.isOpened()) {
         cerr << "Camera not accessible.\n";

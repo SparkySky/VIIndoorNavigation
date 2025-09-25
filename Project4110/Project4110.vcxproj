@@ -160,8 +160,8 @@
     <ClInclude Include="UIForVI.h" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="NodeMapping.txt" />
-    <Text Include="RouteGrid.txt" />
+    <Text Include="NavigationFile\NodeMapping.txt" />
+    <Text Include="NavigationFile\RouteGrid.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

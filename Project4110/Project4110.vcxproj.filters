@@ -91,7 +91,11 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="NodeMapping.txt" />
-    <Text Include="RouteGrid.txt" />
+    <Text Include="NavigationFile\NodeMapping.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="NavigationFile\RouteGrid.txt">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>
