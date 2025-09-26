@@ -4,6 +4,9 @@
 #include <vector>
 #include <limits>
 #include <algorithm>
+#include <opencv2/core/types.hpp>
+
+using namespace cv;
 
 // Constructor
 Graph::Graph(int V) {
@@ -57,76 +60,55 @@ void Graph::addEdge(int src, int dest, int weight) {
     adj[dest].push_back(destNode);
 }
 
-// Implementation of Dijkstra's algorithm (const corrected)
-std::vector<int> Graph::dijkstra(int src, int dest) const {
-    if (src >= V || dest >= V) return {}; // Safety check
+std::vector<int> Graph::astar(int src, int dest, int gridWidth) const {
+    if (src >= V || dest >= V) return {};
 
-    // A priority queue to store vertices that are being preprocessed.
-    // The first value in pair is the distance, the second is the vertex label.
-    std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>, std::greater<std::pair<int, int>>> pq;
+    auto indexToPoint = [gridWidth](int idx) {
+        return cv::Point(idx % gridWidth, idx / gridWidth);
+        };
 
-    // Vector for distances and initialize all distances as infinite
-    std::vector<int> dist(V, std::numeric_limits<int>::max());
+    auto manhattan = [&](int a, int b) {
+        cv::Point pa = indexToPoint(a);
+        cv::Point pb = indexToPoint(b);
+        return abs(pa.x - pb.x) + abs(pa.y - pb.y);
+        };
 
-    // Vector to store the path predecessor
+    using PQElem = std::pair<int, int>;
+    std::priority_queue<PQElem, std::vector<PQElem>, std::greater<PQElem>> openSet;
+
+    std::vector<int> gScore(V, std::numeric_limits<int>::max());
+    std::vector<int> fScore(V, std::numeric_limits<int>::max());
     std::vector<int> pred(V, -1);
 
-    // Insert source itself in priority queue and initialize its distance as 0.
-    pq.push(std::make_pair(0, src));
-    dist[src] = 0;
+    gScore[src] = 0;
+    fScore[src] = manhattan(src, dest);
+    openSet.push({ fScore[src], src });
 
-    while (!pq.empty()) {
-        // The first vertex in pair is the minimum distance vertex.
-        int u = pq.top().second;
-        int dist_u = pq.top().first;
-        pq.pop();
+    while (!openSet.empty()) {
+        int current = openSet.top().second;
+        openSet.pop();
 
-        // --- CORRECTED LOGIC ---
-        // If the distance we just extracted is already greater than a known shorter path,
-        // then this is a stale entry in the queue. Skip it.
-        if (dist_u > dist[u]) {
-            continue;
-        }
+        if (current == dest) break;
 
-        // If we have reached the destination, we can stop.
-        if (u == dest) {
-            break;
-        }
-
-        // 'i' is used to get all adjacent vertices of a vertex
-        for (auto const& i : adj[u]) {
-            int v = i.dest;
-            int weight = i.weight;
-
-            // If there is shorter path to v through u.
-            if (dist[v] > dist[u] + weight) {
-                // Updating distance of v
-                dist[v] = dist[u] + weight;
-                pq.push(std::make_pair(dist[v], v));
-                pred[v] = u; // Set the predecessor of v as u
+        for (const auto& neighbor : adj[current]) {
+            int tentative_gScore = gScore[current] + neighbor.weight;
+            if (tentative_gScore < gScore[neighbor.dest]) {
+                pred[neighbor.dest] = current;
+                gScore[neighbor.dest] = tentative_gScore;
+                fScore[neighbor.dest] = tentative_gScore + manhattan(neighbor.dest, dest);
+                openSet.push({ fScore[neighbor.dest], neighbor.dest });
             }
         }
     }
 
-    // Reconstruct the path from destination to source
     std::vector<int> path;
     int crawl = dest;
-
-    // Check if a path was found (pred[dest] will be set if dest is reachable)
-    if (pred[crawl] == -1 && crawl != src) {
-        return {}; // No path found
-    }
-
+    if (pred[crawl] == -1 && crawl != src) return {};
     while (crawl != -1) {
         path.push_back(crawl);
         crawl = pred[crawl];
     }
-
     std::reverse(path.begin(), path.end());
-
-    if (!path.empty() && path[0] == src) {
-        return path;
-    }
-
+    if (!path.empty() && path[0] == src) return path;
     return {};
 }

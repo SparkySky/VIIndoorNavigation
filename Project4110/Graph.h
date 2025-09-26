@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <list>
+#include <opencv2/core/types.hpp>
 
 // A structure to represent a node in the adjacency list
 struct AdjListNode {
@@ -32,5 +33,5 @@ public:
 
     // Dijkstra's algorithm to find the shortest path from src to dest
     // Returns a vector of integers representing the path
-    std::vector<int> dijkstra(int src, int dest) const;
+    std::vector<int> astar(int src, int dest, int gridWidth) const;
 };
