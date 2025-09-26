@@ -4,9 +4,9 @@ Source.cpp - Yee Jia Hao and Khor Jia En
 	- Based the sub-chapter 3.1 Overall Arcitecture 
 
 ## Individual Contribution ##
-Following source code includes "modules/CODENAME.cpp" and "Header Files/CODENAME.h":
+Following source code includes "Source Files/modules/CODENAME.cpp" and "Header Files/CODENAME.h":
 1. ColourProcessing		- Khor Jia En
-	- Colour processing module using CIELAB
+	- Colour processing module using CIELAB and perform boundary box drawing from ShapeAnalysis
 
 2. ShapeAnalysis		- Yee Jia Hao
 	- Shape analysis module to determine possible QR and thier position (Left, centre and right) in frame
