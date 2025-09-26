@@ -1,63 +1,95 @@
-#include <iostream>
-#include <string>
-
-#include "UIforVI.h"
-#include "Text2Speech.h"
+// Yee Jia Hao
+#include "UIForVI.h"
+#include <fstream>
+#include <sstream>
 
 using namespace std;
 
-Text2Speech narrate;
-
+// Constructor: initializes UI state and loads destination options
 UIForVI::UIForVI() {
-    // Available Location -> Can load from config later
-    destinations = { "Cancel", "N001", "N002", "N003", "N004", "N005", "N006", "N007", "N008A", "N008B", "N009", "N010", "N011", "N012"};
-    curIndex = 0;
+    destinations.push_back("Cancel"); // Always include "Cancel" as first option
+    loadDestinationsFromFile("NavigationFile\\NodeMapping.txt"); // Load all options from NodeMapping.txt
+    active = false;
+    selected_index = 0;
 }
 
-string UIForVI::selectDestination(string curLocation) {
-    curIndex = 0; // Reset to 'Cancel'
-    narrate.speak_low_priority("Select Destination");
-
-    // Function below is needed if first destinations is a real place. Else no need
-    //if (destinations[curIndex] == curLocation) // Pre check if simillar location and dest
-    //    curIndex = (++curIndex + destinations.size()) % destinations.size();  // Skip to next if selection == location.
-
-    narrateCurrentOption(); // Narrate current position
-
-    while (true) { // User input: W - Previous, S - Next, C- Comfirm
-        char input = getUserInput();
-        if (input == 'w') { // Scroll up
-            curIndex = (--curIndex + destinations.size()) % destinations.size();
-            if (destinations[curIndex] == curLocation) 
-                curIndex = (--curIndex + destinations.size()) % destinations.size(); // Post check
+// Checks if the input is a valid destination
+bool UIForVI::validateDestination(const string& input) {
+    for (const auto& dest : destinations) {
+        if (dest == input) {
+            return 1;
         }
-        else if (input == 's') { /// Scroll down
-            curIndex = (++curIndex) % destinations.size();
-            if (destinations[curIndex] == curLocation) 
-                curIndex = (++curIndex + destinations.size()) % destinations.size(); // Post check
+    }
+    return 0;
+}
+
+// Load nodes from NodeMapping.txt into the menu
+void UIForVI::loadDestinationsFromFile(const string& filename) {
+    ifstream file(filename);
+    string line;
+
+    while (getline(file, line)) {
+        size_t pos = line.find(' ');
+        if (pos != string::npos) {
+            destinations.push_back(line.substr(0, pos)); // Only take the part before ':'
         }
-        else if (input == 'c') {
-            if (curIndex == 0) {
-                narrate.speak_low_priority("Navigation Cancelled");
-                return "";
-            }
-            narrate.speak_low_priority("Destination selected: " + destinations[curIndex]);
-            return destinations[curIndex];
-        }
-        narrateCurrentOption();
     }
 }
 
-/*Helper*/
-// Narrate current option
-void UIForVI::narrateCurrentOption() {
-    narrate.speak_low_priority("Option: " + destinations[curIndex]);
+// Activates the UI and sets the origin node
+void UIForVI::activate(const std::string& start_node) {
+    active = true;
+    origin_node = start_node;
+    selected_index = 0; // Default to "Cancel"
+    draw_to_console(); // Draw the initial menu
 }
 
-// Get user input
-char UIForVI::getUserInput() {
-    cout << "[w] Scroll Up | [s] Scroll Down | [c] Confirm\n> ";
-    char input;
-    cin >> input;
-    return input;
+// If cancelled OR navigation end, set deactivate the node, 
+// so user can start from other node
+void UIForVI::deactivate() {
+    active = false;
+}
+
+bool UIForVI::is_active() const {
+    return active;
+}
+
+// Helper: call to move to previous selection
+void UIForVI::scroll_up() {
+    if (!active) return;
+    selected_index = (selected_index - 1 + destinations.size()) % destinations.size();
+    if (destinations[selected_index] == origin_node) scroll_up(); // Skip origin
+    draw_to_console();
+}
+
+// Helper: call to move to next selection
+void UIForVI::scroll_down() {
+    if (!active) return;
+    selected_index = (selected_index + 1) % destinations.size();
+    if (destinations[selected_index] == origin_node) scroll_down(); // Skip origin
+    draw_to_console();
+}
+
+// Get the current node
+std::string UIForVI::get_current_selection() const {
+    if (!active) return "";
+    return destinations[selected_index];
+}
+
+
+// Simple CLI UI
+void UIForVI::draw_to_console() const {
+    if (!active) return;
+    system("cls"); // Clear the console
+    cout << "--- DESTINATION SELECTION ---" << endl;
+    cout << "  Origin: " << origin_node << endl;
+    cout << "-----------------------------" << endl;
+    cout << "  (w/s) or (Mouse Scroll)" << endl;
+    cout << "  (c) or (Left Click)" << endl;
+    cout << "-----------------------------" << endl;
+    for (int i = 0; i < destinations.size(); ++i) {
+        if (destinations[i] == origin_node) continue; // Don't show origin in list
+        cout << (i == selected_index ? " > " : "   ") << destinations[i] << endl;
+    }
+    cout << "-----------------------------" << endl;
 }

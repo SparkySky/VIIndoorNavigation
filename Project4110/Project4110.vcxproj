@@ -136,9 +136,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ColourProcessing.cpp" />
     <ClCompile Include="Graph.cpp" />
     <ClCompile Include="GridRouteReader.cpp" />
     <ClCompile Include="MapVisualizer.cpp" />
+    <ClCompile Include="ShapeAnalysis.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="QRDetector.cpp" />
     <ClCompile Include="Navigator.cpp" />
@@ -148,20 +150,23 @@
     <ClCompile Include="UIForVI.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ColourProcessing.h" />
     <ClInclude Include="Graph.h" />
     <ClInclude Include="GridRouteReader.h" />
     <ClInclude Include="MapVisualizer.h" />
     <ClInclude Include="Navigator.h" />
     <ClInclude Include="nlohmann\json.hpp" />
     <ClInclude Include="QRDetector.h" />
+    <ClInclude Include="ShapeAnalysis.h" />
     <ClInclude Include="Supp.h" />
     <ClInclude Include="Text2Speech.h" />
     <ClInclude Include="TripManager.h" />
     <ClInclude Include="UIForVI.h" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="NodeMapping.txt" />
-    <Text Include="RouteGrid.txt" />
+    <Text Include="NavigationFile\NodeMapping.txt" />
+    <Text Include="NavigationFile\RouteGrid.txt" />
+    <Text Include="README.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

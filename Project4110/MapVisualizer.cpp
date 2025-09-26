@@ -1,3 +1,4 @@
+// Yee Wen Xian
 #include "MapVisualizer.h"
 #include <iostream>
 #include <algorithm> // Required for std::min
@@ -22,7 +23,6 @@ MapVisualizer::MapVisualizer(const std::vector<std::string>& grid, const std::ma
         return; // Nothing to do if grid is empty
     }
 
-    // --- START OF FIX ---
     // Dynamically calculate cell size to fit the map on the screen
     int maxMapWidth = 800;  // Maximum desired width of the map window in pixels
     int maxMapHeight = 800; // Maximum desired height of the map window in pixels
@@ -38,8 +38,6 @@ MapVisualizer::MapVisualizer(const std::vector<std::string>& grid, const std::ma
     if (this->cellSize < 1) {
         this->cellSize = 1;
     }
-    // --- END OF FIX ---
-
 
     // Create the base map image once using the new dynamic cell size
     this->mapBase = cv::Mat::zeros(gridRows * this->cellSize, gridCols * this->cellSize, CV_8UC3);

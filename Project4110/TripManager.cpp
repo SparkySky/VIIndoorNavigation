@@ -1,3 +1,4 @@
+// Yee Jia Hao
 #include "TripManager.h"
 #include <algorithm>
 
@@ -22,12 +23,12 @@ void TripManager::updateLocation(const std::string& newLocation) {
     }
 }
 
-// Set new path (After setting destination)
+// Set new path (After setting destination, OR even reroute)
 void TripManager::setPath(const vector<string>& newPath) {
     path = newPath;
 }
 
-// Get next node in a predefined path
+// Returns the next node in the path
 std::string TripManager::getNextNode() const {
     if (!path.empty()) {
         return path.front();
@@ -35,16 +36,18 @@ std::string TripManager::getNextNode() const {
     return "";
 }
 
+// Returns the current location
 const std::string& TripManager::getCurrentLocation() const {
     return currentLocation;
 }
 
+// Checks if the path is empty
 bool TripManager::isPathEmpty() const {
     return path.empty();
 }
 
+// Use std::find to search the path vector for the location.
+// This correctly checks if the scanned location is a future checkpoint.
 bool TripManager::isLocationOnPath(const std::string& location) const {
-    // Use std::find to search the path vector for the location.
-    // This correctly checks if the scanned location is a future checkpoint.
     return (std::find(path.begin(), path.end(), location) != path.end());
 }

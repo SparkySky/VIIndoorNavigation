@@ -1,9 +1,9 @@
+// Long Lin Tean
 #include "GridRouteReader.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>
 
-// Constructor: Initializes the GridRouteReader object.
 GridRouteReader::GridRouteReader() {}
 
 // gridLoader: Reads a text file, builds a graph from it, and stores the grid.
