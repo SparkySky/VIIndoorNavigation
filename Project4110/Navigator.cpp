@@ -6,7 +6,6 @@
 
 #include "Navigator.h"
 #include "GridRouteReader.h"
-#include "nlohmann/json.hpp"
 
 using namespace std;
 
