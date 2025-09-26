@@ -3,6 +3,10 @@
 #include <vector>
 #include <limits>
 #include <algorithm>
+#include <opencv2/core/types.hpp>
+
+using namespace cv;
+using namespace std;
 
 // Constructor
 Graph::Graph(int V) {
