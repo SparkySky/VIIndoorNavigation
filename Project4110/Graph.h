@@ -32,5 +32,6 @@ public:
 
     // Dijkstra's algorithm to find the shortest path from src to dest
     // Returns a vector of integers representing the path
-    std::vector<int> dijkstra(int src, int dest) const;
+    vector<int> astar(int src, int dest, int gridWidth) const;
+
 };
