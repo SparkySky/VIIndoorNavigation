@@ -136,6 +136,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ColourProcessing.cpp" />
     <ClCompile Include="Graph.cpp" />
     <ClCompile Include="GridRouteReader.cpp" />
     <ClCompile Include="MapVisualizer.cpp" />
@@ -149,6 +150,7 @@
     <ClCompile Include="UIForVI.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ColourProcessing.h" />
     <ClInclude Include="Graph.h" />
     <ClInclude Include="GridRouteReader.h" />
     <ClInclude Include="MapVisualizer.h" />

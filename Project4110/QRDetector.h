@@ -3,6 +3,7 @@
 #include <string>
 #include "Text2Speech.h"
 #include "UIForVi.h"
+#include "ColourProcessing.h"
 #include "ShapeAnalysis.h"
 
 class QRDetector {
@@ -12,8 +13,9 @@ public:
     std::string detect(const cv::Mat& frame, UIForVI&, ShapeAnalysis& analyser);
     cv::Mat cropped;
     cv::Mat upscaled;
-    cv::Mat extractRedRegion(const cv::Mat& frame, ShapeAnalysis& analyser);
+    //cv::Mat extractRedRegion(const cv::Mat& frame, ShapeAnalysis& analyser);
 private:
     cv::Mat grayscale, thresold;
+    ColourProcessing colourProcessing;
     Text2Speech narrate;
 };
