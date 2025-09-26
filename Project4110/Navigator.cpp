@@ -1,3 +1,4 @@
+// Yee Jia Hao
 #include <queue>
 #include <fstream>
 #include <sstream>   // For parsing strings
@@ -12,6 +13,7 @@ using namespace std;
 
 Navigator::Navigator() {}
 
+// Loads node names and their grid coordinates from "NavigationFile/".
 bool Navigator::loadNodeMap(const std::string& filename, int gridWidth) {
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -33,7 +35,7 @@ bool Navigator::loadNodeMap(const std::string& filename, int gridWidth) {
 
         if (ss >> nodeName >> row >> col) {
             nodeCoordinates[nodeName] = cv::Point(col, row);
-            int index = row * gridWidth + col; // Now uses the correct width
+            int index = row * gridWidth + col;
             indexToNodeName[index] = nodeName;
             
         }
@@ -42,6 +44,7 @@ bool Navigator::loadNodeMap(const std::string& filename, int gridWidth) {
     std::cout << "Node map loaded successfully." << std::endl;
 }
 
+// Converts a path of grid indices into a list of named nodes (e.g. N001, N002)
 std::vector<std::string> Navigator::convertPathToStrings(const std::vector<int>& path, int gridWidth) {
     std::vector<std::string> stringPath;
     for (int index : path) {
@@ -56,6 +59,7 @@ std::vector<std::string> Navigator::convertPathToStrings(const std::vector<int>&
     return stringPath;
 }
 
+// Finds shortest path between two named nodes using algorithm
 std::vector<int> Navigator::findPath(const std::string& startNodeName, const std::string& endNodeName, const Graph& graph, int gridWidth) {
     if (nodeCoordinates.find(startNodeName) == nodeCoordinates.end() ||
         nodeCoordinates.find(endNodeName) == nodeCoordinates.end()) {
@@ -75,6 +79,7 @@ std::vector<int> Navigator::findPath(const std::string& startNodeName, const std
     return graph.dijkstra(startIndex, endIndex);
 }
 
+// Returns the map of node names to their grid coordinates.
 const std::map<std::string, cv::Point>& Navigator::getNodeCoordinates() const {
     return nodeCoordinates;
 }

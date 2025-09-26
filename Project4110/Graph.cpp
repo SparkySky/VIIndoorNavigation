@@ -1,3 +1,4 @@
+// Long Lin Tean
 #include "Graph.h"
 #include <queue>
 #include <vector>
@@ -15,7 +16,6 @@ Graph::~Graph() {
     delete[] adj;
 }
 
-// <<< ADD THIS COPY CONSTRUCTOR >>>
 // Performs a deep copy of the graph
 Graph::Graph(const Graph& other) {
     V = other.V;
@@ -25,7 +25,6 @@ Graph::Graph(const Graph& other) {
     }
 }
 
-// <<< ADD THIS COPY ASSIGNMENT OPERATOR >>>
 // Handles assignment (e.g., graph1 = graph2)
 Graph& Graph::operator=(const Graph& other) {
     if (this == &other) { // Handle self-assignment
