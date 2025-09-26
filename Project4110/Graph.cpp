@@ -7,7 +7,7 @@
 // Constructor
 Graph::Graph(int V) {
     this->V = V;
-    this->adj = new std::list<AdjListNode>[V];
+    this->adj = new list<AdjListNode>[V];
 }
 
 // Destructor
@@ -19,7 +19,7 @@ Graph::~Graph() {
 // Performs a deep copy of the graph
 Graph::Graph(const Graph& other) {
     V = other.V;
-    adj = new std::list<AdjListNode>[V];
+    adj = new list<AdjListNode>[V];
     for (int i = 0; i < V; ++i) {
         adj[i] = other.adj[i];
     }
@@ -37,7 +37,7 @@ Graph& Graph::operator=(const Graph& other) {
 
     // Copy data from other object
     V = other.V;
-    adj = new std::list<AdjListNode>[V];
+    adj = new list<AdjListNode>[V];
     for (int i = 0; i < V; ++i) {
         adj[i] = other.adj[i];
     }
@@ -58,76 +58,55 @@ void Graph::addEdge(int src, int dest, int weight) {
     adj[dest].push_back(destNode);
 }
 
-// Implementation of Dijkstra's algorithm (const corrected)
-std::vector<int> Graph::dijkstra(int src, int dest) const {
-    if (src >= V || dest >= V) return {}; // Safety check
+vector<int> Graph::astar(int src, int dest, int gridWidth) const {
+    if (src >= V || dest >= V) return {};
 
-    // A priority queue to store vertices that are being preprocessed.
-    // The first value in pair is the distance, the second is the vertex label.
-    std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>, std::greater<std::pair<int, int>>> pq;
+    auto indexToPoint = [gridWidth](int idx) {
+        return cv::Point(idx % gridWidth, idx / gridWidth);
+    };
 
-    // Vector for distances and initialize all distances as infinite
-    std::vector<int> dist(V, std::numeric_limits<int>::max());
+    auto manhattan = [&](int a, int b) {
+        cv::Point pa = indexToPoint(a);
+        cv::Point pb = indexToPoint(b);
+        return abs(pa.x - pb.x) + abs(pa.y - pb.y);
+    };
 
-    // Vector to store the path predecessor
-    std::vector<int> pred(V, -1);
+    using PQElem = pair<int, int>; // (f_score, node)
+    priority_queue<PQElem, vector<PQElem>, greater<PQElem>> openSet;
 
-    // Insert source itself in priority queue and initialize its distance as 0.
-    pq.push(std::make_pair(0, src));
-    dist[src] = 0;
+    vector<int> gScore(V, numeric_limits<int>::max());
+    vector<int> fScore(V, numeric_limits<int>::max());
+    vector<int> pred(V, -1);
 
-    while (!pq.empty()) {
-        // The first vertex in pair is the minimum distance vertex.
-        int u = pq.top().second;
-        int dist_u = pq.top().first;
-        pq.pop();
+    gScore[src] = 0;
+    fScore[src] = manhattan(src, dest);
+    openSet.push({fScore[src], src});
 
-        // --- CORRECTED LOGIC ---
-        // If the distance we just extracted is already greater than a known shorter path,
-        // then this is a stale entry in the queue. Skip it.
-        if (dist_u > dist[u]) {
-            continue;
-        }
+    while (!openSet.empty()) {
+        int current = openSet.top().second;
+        openSet.pop();
 
-        // If we have reached the destination, we can stop.
-        if (u == dest) {
-            break;
-        }
+        if (current == dest) break;
 
-        // 'i' is used to get all adjacent vertices of a vertex
-        for (auto const& i : adj[u]) {
-            int v = i.dest;
-            int weight = i.weight;
-
-            // If there is shorter path to v through u.
-            if (dist[v] > dist[u] + weight) {
-                // Updating distance of v
-                dist[v] = dist[u] + weight;
-                pq.push(std::make_pair(dist[v], v));
-                pred[v] = u; // Set the predecessor of v as u
+        for (const auto& neighbor : adj[current]) {
+            int tentative_gScore = gScore[current] + neighbor.weight;
+            if (tentative_gScore < gScore[neighbor.dest]) {
+                pred[neighbor.dest] = current;
+                gScore[neighbor.dest] = tentative_gScore;
+                fScore[neighbor.dest] = tentative_gScore + manhattan(neighbor.dest, dest);
+                openSet.push({fScore[neighbor.dest], neighbor.dest});
             }
         }
     }
 
-    // Reconstruct the path from destination to source
-    std::vector<int> path;
+    vector<int> path;
     int crawl = dest;
-
-    // Check if a path was found (pred[dest] will be set if dest is reachable)
-    if (pred[crawl] == -1 && crawl != src) {
-        return {}; // No path found
-    }
-
+    if (pred[crawl] == -1 && crawl != src) return {};
     while (crawl != -1) {
         path.push_back(crawl);
         crawl = pred[crawl];
     }
-
-    std::reverse(path.begin(), path.end());
-
-    if (!path.empty() && path[0] == src) {
-        return path;
-    }
-
+    reverse(path.begin(), path.end());
+    if (!path.empty() && path[0] == src) return path;
     return {};
 }
