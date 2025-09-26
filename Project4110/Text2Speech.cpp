@@ -30,7 +30,7 @@ Text2Speech::~Text2Speech() {
     ::CoUninitialize();
 }
 
-// NEW function that must be called in your main loop
+// Function that must be called in main loop
 void Text2Speech::update_status() {
     // If we think we're speaking, check if the voice has actually finished.
     // This resets our state back to IDLE when speech is complete.
