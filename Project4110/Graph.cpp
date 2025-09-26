@@ -6,12 +6,11 @@
 #include <opencv2/core/types.hpp>
 
 using namespace cv;
-using namespace std;
 
 // Constructor
 Graph::Graph(int V) {
     this->V = V;
-    this->adj = new list<AdjListNode>[V];
+    this->adj = new std::list<AdjListNode>[V];
 }
 
 // Destructor
@@ -23,7 +22,7 @@ Graph::~Graph() {
 // Performs a deep copy of the graph
 Graph::Graph(const Graph& other) {
     V = other.V;
-    adj = new list<AdjListNode>[V];
+    adj = new std::list<AdjListNode>[V];
     for (int i = 0; i < V; ++i) {
         adj[i] = other.adj[i];
     }
@@ -41,7 +40,7 @@ Graph& Graph::operator=(const Graph& other) {
 
     // Copy data from other object
     V = other.V;
-    adj = new list<AdjListNode>[V];
+    adj = new std::list<AdjListNode>[V];
     for (int i = 0; i < V; ++i) {
         adj[i] = other.adj[i];
     }
@@ -62,29 +61,29 @@ void Graph::addEdge(int src, int dest, int weight) {
     adj[dest].push_back(destNode);
 }
 
-vector<int> Graph::astar(int src, int dest, int gridWidth) const {
+std::vector<int> Graph::astar(int src, int dest, int gridWidth) const {
     if (src >= V || dest >= V) return {};
 
     auto indexToPoint = [gridWidth](int idx) {
         return cv::Point(idx % gridWidth, idx / gridWidth);
-    };
+        };
 
     auto manhattan = [&](int a, int b) {
         cv::Point pa = indexToPoint(a);
         cv::Point pb = indexToPoint(b);
         return abs(pa.x - pb.x) + abs(pa.y - pb.y);
-    };
+        };
 
-    using PQElem = pair<int, int>; // (f_score, node)
-    priority_queue<PQElem, vector<PQElem>, greater<PQElem>> openSet;
+    using PQElem = std::pair<int, int>;
+    std::priority_queue<PQElem, std::vector<PQElem>, std::greater<PQElem>> openSet;
 
-    vector<int> gScore(V, numeric_limits<int>::max());
-    vector<int> fScore(V, numeric_limits<int>::max());
-    vector<int> pred(V, -1);
+    std::vector<int> gScore(V, std::numeric_limits<int>::max());
+    std::vector<int> fScore(V, std::numeric_limits<int>::max());
+    std::vector<int> pred(V, -1);
 
     gScore[src] = 0;
     fScore[src] = manhattan(src, dest);
-    openSet.push({fScore[src], src});
+    openSet.push({ fScore[src], src });
 
     while (!openSet.empty()) {
         int current = openSet.top().second;
@@ -98,19 +97,19 @@ vector<int> Graph::astar(int src, int dest, int gridWidth) const {
                 pred[neighbor.dest] = current;
                 gScore[neighbor.dest] = tentative_gScore;
                 fScore[neighbor.dest] = tentative_gScore + manhattan(neighbor.dest, dest);
-                openSet.push({fScore[neighbor.dest], neighbor.dest});
+                openSet.push({ fScore[neighbor.dest], neighbor.dest });
             }
         }
     }
 
-    vector<int> path;
+    std::vector<int> path;
     int crawl = dest;
     if (pred[crawl] == -1 && crawl != src) return {};
     while (crawl != -1) {
         path.push_back(crawl);
         crawl = pred[crawl];
     }
-    reverse(path.begin(), path.end());
+    std::reverse(path.begin(), path.end());
     if (!path.empty() && path[0] == src) return path;
     return {};
 }
