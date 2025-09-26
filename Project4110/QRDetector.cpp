@@ -44,8 +44,10 @@ cv::Rect QRDetector::detect(cv::Mat& frame, std::string& decodedData, UIForVI& u
     return bbox;
 }
 
+
 string QRDetector::detect(const Mat& frame, UIForVI& uiManager, ShapeAnalysis& analyser) {
     Mat mask = colourProcessing.extractRedRegion(frame, analyser);
+
     vector<vector<Point>> contours;
 
     findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
