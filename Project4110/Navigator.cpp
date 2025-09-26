@@ -1,6 +1,6 @@
 #include <queue>
 #include <fstream>
-#include <sstream>   // For parsing strings
+#include <sstream>
 #include <iostream>
 
 #include "Navigator.h"
@@ -79,3 +79,4 @@ const map<string, cv::Point>& Navigator::getNodeCoordinates() const {
     return nodeCoordinates;
 
 }
+
