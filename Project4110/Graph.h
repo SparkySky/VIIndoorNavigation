@@ -1,39 +1,115 @@
-#pragma once
-
+#include "Graph.h"
+#include <queue>
 #include <vector>
-#include <list>
+#include <limits>
+#include <algorithm>
 #include <opencv2/core/types.hpp>
 
-// A structure to represent a node in the adjacency list
-struct AdjListNode {
-    int dest;
-    int weight;
-};
+using namespace cv;
 
-// A structure to represent a graph. A graph is an array of adjacency lists.
-// Size of array will be V (number of vertices in graph)
-class Graph {
-private:
-    int V; // Number of vertices
-    std::list<AdjListNode>* adj; // Pointer to an array containing adjacency lists
+// Constructor
+Graph::Graph(int V) {
+    this->V = V;
+    this->adj = new std::list<AdjListNode>[V];
+}
 
-public:
-    // Constructor: Initializes a graph with V vertices.
-    // We are providing a default constructor and an initializer
-    Graph(int V = 0);
+// Destructor
+Graph::~Graph() {
+    delete[] adj;
+}
 
-    // Destructor
-    ~Graph();
+// <<< ADD THIS COPY CONSTRUCTOR >>>
+// Performs a deep copy of the graph
+Graph::Graph(const Graph& other) {
+    V = other.V;
+    adj = new std::list<AdjListNode>[V];
+    for (int i = 0; i < V; ++i) {
+        adj[i] = other.adj[i];
+    }
+}
 
-    Graph(const Graph& other); // Copy Constructor
-    Graph& operator=(const Graph& other); // Copy Assignment Operator
+// <<< ADD THIS COPY ASSIGNMENT OPERATOR >>>
+// Handles assignment (e.g., graph1 = graph2)
+Graph& Graph::operator=(const Graph& other) {
+    if (this == &other) { // Handle self-assignment
+        return *this;
+    }
 
-    // Function to add an edge to graph
-    void addEdge(int src, int dest, int weight = 1);
+    // Clean up existing resource
+    delete[] adj;
 
-    // Dijkstra's algorithm to find the shortest path from src to dest
-    // Returns a vector of integers representing the path
-    vector<int> astar(int src, int dest, int gridWidth) const;
+    // Copy data from other object
+    V = other.V;
+    adj = new std::list<AdjListNode>[V];
+    for (int i = 0; i < V; ++i) {
+        adj[i] = other.adj[i];
+    }
 
-};
+    return *this;
+}
 
+
+// Adds an edge from src to dest.
+void Graph::addEdge(int src, int dest, int weight) {
+    // Check for out-of-bounds access
+    if (src >= V || dest >= V) return;
+
+    AdjListNode srcNode = { dest, weight };
+    adj[src].push_back(srcNode);
+
+    AdjListNode destNode = { src, weight };
+    adj[dest].push_back(destNode);
+}
+
+std::vector<int> Graph::astar(int src, int dest, int gridWidth) const {
+    if (src >= V || dest >= V) return {};
+
+    auto indexToPoint = [gridWidth](int idx) {
+        return cv::Point(idx % gridWidth, idx / gridWidth);
+        };
+
+    auto manhattan = [&](int a, int b) {
+        cv::Point pa = indexToPoint(a);
+        cv::Point pb = indexToPoint(b);
+        return abs(pa.x - pb.x) + abs(pa.y - pb.y);
+        };
+
+    using PQElem = std::pair<int, int>;
+    std::priority_queue<PQElem, std::vector<PQElem>, std::greater<PQElem>> openSet;
+
+    std::vector<int> gScore(V, std::numeric_limits<int>::max());
+    std::vector<int> fScore(V, std::numeric_limits<int>::max());
+    std::vector<int> pred(V, -1);
+
+    gScore[src] = 0;
+    fScore[src] = manhattan(src, dest);
+    openSet.push({ fScore[src], src });
+
+    while (!openSet.empty()) {
+        int current = openSet.top().second;
+        openSet.pop();
+
+        if (current == dest) break;
+
+        for (const auto& neighbor : adj[current]) {
+            int tentative_gScore = gScore[current] + neighbor.weight;
+            if (tentative_gScore < gScore[neighbor.dest]) {
+                pred[neighbor.dest] = current;
+                gScore[neighbor.dest] = tentative_gScore;
+                fScore[neighbor.dest] = tentative_gScore + manhattan(neighbor.dest, dest);
+                openSet.push({ fScore[neighbor.dest], neighbor.dest });
+            }
+        }
+    }
+
+    std::vector<int> path;
+    int crawl = dest;
+    if (pred[crawl] == -1 && crawl != src) return {};
+    while (crawl != -1) {
+        path.push_back(crawl);
+        crawl = pred[crawl];
+    }
+    std::reverse(path.begin(), path.end());
+    if (!path.empty() && path[0] == src) return path;
+    return {};
+}
