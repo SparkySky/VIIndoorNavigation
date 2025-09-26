@@ -1,3 +1,5 @@
+// Contribution by Yee Jia Hao and Khor Jia En
+// Refer to README.txt for detailed contribution listing and description.
 #include <iostream>
 #include <opencv2/core/core.hpp> // Core functions
 #include <opencv2/highgui/highgui.hpp> // GUI functions
@@ -73,8 +75,6 @@ void drawSelectionOnScreen(Mat& image, const UIForVI& ui) {
     string selection = ui.get_current_selection();
     putText(image, "Selected: " + selection, Point(20, image.rows / 2), FONT_HERSHEY_SIMPLEX, 1.2, Scalar(0, 255, 255), 3);
 }
-
-int TRLoc = 0;
 
 int main() {
     VideoCapture cap(0);    // 0 (Default camera), >= 1 (other input)
@@ -180,6 +180,7 @@ int main() {
             if (isNavigating) {
                 if (tripManager.isLocationOnPath(locationID)) {
                     tripManager.updateLocation(locationID);
+                    // Clean the navigation status if arrived at destination
                     if (tripManager.isPathEmpty()) {
                         narrate.speak_high_priority("Arrived at " + finalDestination);
                         isNavigating = false;
@@ -190,7 +191,7 @@ int main() {
                     }
                 }
                 else {
-                    // --- REROUTING LOGIC ---
+                    // REROUTING LOGIC
                     narrate.speak_high_priority("Rerouting from " + locationID);
 
                     currentIntPath = navigator.findPath(locationID, finalDestination, reader.getGraph(), reader.getGridWidth());
@@ -219,10 +220,10 @@ int main() {
 
         // Handle user input IF selection mode is active
         if (uiManager.is_active()) {
-            // 1. Create a temporary copy of the frozen frame to draw on
+            // Create a temporary copy of the frozen frame to draw on
             Mat tempDisplayFrame = selectionFrame.clone();
 
-            // 2. Draw the selection menu onto the temporary copy
+            // Draw the selection menu onto the temporary copy
             drawSelectionOnScreen(tempDisplayFrame, uiManager);
 
             // FREEZE: Black out other panels

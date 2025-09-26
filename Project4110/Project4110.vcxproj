@@ -166,6 +166,7 @@
   <ItemGroup>
     <Text Include="NavigationFile\NodeMapping.txt" />
     <Text Include="NavigationFile\RouteGrid.txt" />
+    <Text Include="README.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

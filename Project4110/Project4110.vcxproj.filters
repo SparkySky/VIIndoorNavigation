@@ -45,19 +45,22 @@
     <ClCompile Include="UIForVI.cpp">
       <Filter>Source Files\modules</Filter>
     </ClCompile>
-    <ClCompile Include="supp.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="ShapeAnalysis.cpp">
+      <Filter>Source Files\modules</Filter>
+    </ClCompile>
+    <ClCompile Include="ColourProcessing.cpp">
+      <Filter>Source Files\modules</Filter>
     </ClCompile>
     <ClCompile Include="Graph.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\modules</Filter>
     </ClCompile>
     <ClCompile Include="GridRouteReader.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\modules</Filter>
     </ClCompile>
     <ClCompile Include="MapVisualizer.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\modules</Filter>
     </ClCompile>
-    <ClCompile Include="ShapeAnalysis.cpp">
+    <ClCompile Include="supp.cpp">
       <Filter>Source Files\modules</Filter>
     </ClCompile>
   </ItemGroup>
@@ -95,12 +98,18 @@
     <ClInclude Include="ShapeAnalysis.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ColourProcessing.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="NavigationFile\NodeMapping.txt">
       <Filter>Source Files</Filter>
     </Text>
     <Text Include="NavigationFile\RouteGrid.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="README.txt">
       <Filter>Source Files</Filter>
     </Text>
   </ItemGroup>

@@ -1,3 +1,4 @@
+// Khor Jia En
 #define NOMINMAX
 
 #include <opencv2/core/core.hpp>

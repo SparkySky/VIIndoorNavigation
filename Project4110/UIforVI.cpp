@@ -1,9 +1,11 @@
+// Yee Jia Hao
 #include "UIForVI.h"
 #include <fstream>
 #include <sstream>
 
 using namespace std;
 
+// Constructor: initializes UI state and loads destination options
 UIForVI::UIForVI() {
     destinations.push_back("Cancel"); // Always include "Cancel" as first option
     loadDestinationsFromFile("NavigationFile\\NodeMapping.txt"); // Load all options from NodeMapping.txt
@@ -11,6 +13,7 @@ UIForVI::UIForVI() {
     selected_index = 0;
 }
 
+// Checks if the input is a valid destination
 bool UIForVI::validateDestination(const string& input) {
     for (const auto& dest : destinations) {
         if (dest == input) {
@@ -20,7 +23,7 @@ bool UIForVI::validateDestination(const string& input) {
     return 0;
 }
 
-// Load nodes from NodeMapping.txt
+// Load nodes from NodeMapping.txt into the menu
 void UIForVI::loadDestinationsFromFile(const string& filename) {
     ifstream file(filename);
     string line;
@@ -33,7 +36,7 @@ void UIForVI::loadDestinationsFromFile(const string& filename) {
     }
 }
 
-// If node scanned, activate this node
+// Activates the UI and sets the origin node
 void UIForVI::activate(const std::string& start_node) {
     active = true;
     origin_node = start_node;
@@ -74,7 +77,7 @@ std::string UIForVI::get_current_selection() const {
 }
 
 
-// Simple UI
+// Simple CLI UI
 void UIForVI::draw_to_console() const {
     if (!active) return;
     system("cls"); // Clear the console

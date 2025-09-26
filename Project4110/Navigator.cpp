@@ -1,3 +1,4 @@
+// Yee Jia Hao
 #include <queue>
 #include <fstream>
 #include <sstream>
@@ -9,9 +10,9 @@
 
 using namespace std;
 
-
 Navigator::Navigator() {}
 
+// Loads node names and their grid coordinates from "NavigationFile/".
 bool Navigator::loadNodeMap(const string& filename, int gridWidth) {
     ifstream file(filename);
     if (!file.is_open()) {
@@ -33,7 +34,7 @@ bool Navigator::loadNodeMap(const string& filename, int gridWidth) {
 
         if (ss >> nodeName >> row >> col) {
             nodeCoordinates[nodeName] = cv::Point(col, row);
-            int index = row * gridWidth + col; // Now uses the correct width
+            int index = row * gridWidth + col;
             indexToNodeName[index] = nodeName;
             
         }
@@ -42,6 +43,7 @@ bool Navigator::loadNodeMap(const string& filename, int gridWidth) {
     cout << "Node map loaded successfully." << endl;
 }
 
+// Converts a path of grid indices into a list of named nodes (e.g. N001, N002)
 vector<string> Navigator::convertPathToStrings(const vector<int>& path, int gridWidth) {
     vector<string> stringPath;
     for (int index : path) {
@@ -56,6 +58,7 @@ vector<string> Navigator::convertPathToStrings(const vector<int>& path, int grid
     return stringPath;
 }
 
+// Finds shortest path between two named nodes using algorithm
 vector<int> Navigator::findPath(const string& startNodeName, const string& endNodeName, const Graph& graph, int gridWidth) {
     if (nodeCoordinates.find(startNodeName) == nodeCoordinates.end() ||
         nodeCoordinates.find(endNodeName) == nodeCoordinates.end()) {
@@ -75,8 +78,8 @@ vector<int> Navigator::findPath(const string& startNodeName, const string& endNo
     return graph.astar(startIndex, endIndex, gridWidth);
 }
 
+// Returns the map of node names to their grid coordinates.
 const map<string, cv::Point>& Navigator::getNodeCoordinates() const {
     return nodeCoordinates;
-
 }
 
